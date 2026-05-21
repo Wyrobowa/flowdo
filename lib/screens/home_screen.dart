@@ -11,8 +11,12 @@ import '../widgets/add_task_sheet.dart';
 import '../widgets/group_section.dart';
 import '../widgets/task_card.dart';
 
+enum HomeMode { tasks, groups }
+
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.mode});
+
+  final HomeMode mode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,7 +27,11 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flowdo'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
+        title: Text(mode == HomeMode.tasks ? 'Tasks & breaks' : 'Groups & tasks'),
         actions: [
           if (doneCount > 0)
             TextButton.icon(
@@ -31,17 +39,22 @@ class HomeScreen extends ConsumerWidget {
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Reset'),
             ),
-          IconButton(
-            onPressed: () => _openGroupSheet(context),
-            icon: const Icon(Icons.create_new_folder_outlined),
-            tooltip: 'New group',
-          ),
+          if (mode == HomeMode.groups)
+            IconButton(
+              onPressed: () => _openGroupSheet(context),
+              icon: const Icon(Icons.create_new_folder_outlined),
+              tooltip: 'New group',
+            ),
           const SizedBox(width: 4),
         ],
       ),
-      body: groups.isEmpty
-          ? _FlatBody(tasks: tasks)
-          : _GroupedBody(groups: groups, tasks: tasks),
+      body: mode == HomeMode.tasks
+          ? _TasksBody(tasks: tasks, onAddTask: () => _openTaskSheet(context))
+          : _GroupsBody(
+              groups: groups,
+              tasks: tasks,
+              onAddGroup: () => _openGroupSheet(context),
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openTaskSheet(context),
         child: const Icon(Icons.add),
@@ -77,19 +90,24 @@ class HomeScreen extends ConsumerWidget {
       );
 }
 
-// ── Flat view (no groups) ────────────────────────────────────────────────────
+// ── Tasks mode ────────────────────────────────────────────────────────────────
 
-class _FlatBody extends ConsumerWidget {
-  const _FlatBody({required this.tasks});
+class _TasksBody extends ConsumerWidget {
+  const _TasksBody({required this.tasks, required this.onAddTask});
 
   final List<Task> tasks;
+  final VoidCallback onAddTask;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (tasks.isEmpty) {
       return _EmptyState(
-        onAddTask: () => _openTaskSheet(context),
-        onAddGroup: () => _openGroupSheet(context),
+        icon: Icons.checklist_rounded,
+        color: const Color(0xFF3B82F6),
+        title: 'No tasks yet',
+        description: 'Add tasks with custom focus time\nand breaks, then start your flow.',
+        actionLabel: 'Add first task',
+        onAction: onAddTask,
       );
     }
     return Column(
@@ -111,37 +129,35 @@ class _FlatBody extends ConsumerWidget {
       ],
     );
   }
-
-  void _openTaskSheet(BuildContext context) => showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (_) => const AddTaskSheet(),
-      );
-
-  void _openGroupSheet(BuildContext context) => showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (_) => const AddGroupSheet(),
-      );
 }
 
-// ── Grouped view ─────────────────────────────────────────────────────────────
+// ── Groups mode ───────────────────────────────────────────────────────────────
 
-class _GroupedBody extends ConsumerWidget {
-  const _GroupedBody({required this.groups, required this.tasks});
+class _GroupsBody extends ConsumerWidget {
+  const _GroupsBody({
+    required this.groups,
+    required this.tasks,
+    required this.onAddGroup,
+  });
 
   final List<TaskGroup> groups;
   final List<Task> tasks;
+  final VoidCallback onAddGroup;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ungrouped = tasks.where((t) => t.groupId == null).toList();
+
+    if (groups.isEmpty && ungrouped.isEmpty) {
+      return _EmptyState(
+        icon: Icons.folder_open_rounded,
+        color: const Color(0xFFA855F7),
+        title: 'No groups yet',
+        description: 'Create groups like Work or Personal\nto organise your tasks.',
+        actionLabel: 'Create first group',
+        onAction: onAddGroup,
+      );
+    }
 
     return SingleChildScrollView(
       child: Column(
@@ -203,7 +219,7 @@ class _GroupedBody extends ConsumerWidget {
   }
 }
 
-// ── Shared sub-widgets ────────────────────────────────────────────────────────
+// ── Shared widgets ────────────────────────────────────────────────────────────
 
 class _ProgressHeader extends StatelessWidget {
   const _ProgressHeader({required this.tasks});
@@ -288,14 +304,24 @@ class _StartSessionBar extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onAddTask, required this.onAddGroup});
+  const _EmptyState({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.description,
+    required this.actionLabel,
+    required this.onAction,
+  });
 
-  final VoidCallback onAddTask;
-  final VoidCallback onAddGroup;
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String description;
+  final String actionLabel;
+  final VoidCallback onAction;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -306,23 +332,19 @@ class _EmptyState extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: cs.primary.withValues(alpha: 0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.format_list_bulleted_add,
-                size: 36,
-                color: cs.primary,
-              ),
+              child: Icon(icon, size: 36, color: color),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'No tasks yet',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
-              'Add tasks with custom focus time\nand breaks, then start your flow.',
+              description,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -332,15 +354,10 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             FilledButton.icon(
-              onPressed: onAddTask,
+              onPressed: onAction,
               icon: const Icon(Icons.add),
-              label: const Text('Add first task'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: onAddGroup,
-              icon: const Icon(Icons.create_new_folder_outlined, size: 18),
-              label: const Text('Create a group'),
+              label: Text(actionLabel),
+              style: FilledButton.styleFrom(backgroundColor: color),
             ),
           ],
         ),

@@ -387,7 +387,7 @@ class _DoneScreen extends StatelessWidget {
                       context.go('/');
                     },
                     icon: const Icon(Icons.home_rounded),
-                    label: const Text('Back to tasks'),
+                    label: const Text('Back to home'),
                   ),
                 ),
               ],
