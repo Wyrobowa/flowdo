@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../providers/tasks_provider.dart';
+import '../models/task.dart';
+import '../models/task_group.dart';
+import '../providers/groups_provider.dart';
 import '../providers/session_provider.dart';
+import '../providers/tasks_provider.dart';
+import '../widgets/add_group_sheet.dart';
 import '../widgets/add_task_sheet.dart';
+import '../widgets/group_section.dart';
 import '../widgets/task_card.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -11,6 +16,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final groups = ref.watch(groupsProvider);
     final tasks = ref.watch(tasksProvider);
     final pending = ref.watch(pendingTasksProvider);
     final doneCount = tasks.where((t) => t.isDone).length;
@@ -25,34 +31,19 @@ class HomeScreen extends ConsumerWidget {
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Reset'),
             ),
-          const SizedBox(width: 8),
+          IconButton(
+            onPressed: () => _openGroupSheet(context),
+            icon: const Icon(Icons.create_new_folder_outlined),
+            tooltip: 'New group',
+          ),
+          const SizedBox(width: 4),
         ],
       ),
-      body: tasks.isEmpty
-          ? _EmptyState(onAdd: () => _openAddSheet(context))
-          : Column(
-              children: [
-                if (tasks.isNotEmpty) _ProgressHeader(tasks: tasks),
-                Expanded(
-                  child: ReorderableListView.builder(
-                    padding: const EdgeInsets.only(bottom: 120),
-                    itemCount: tasks.length,
-                    onReorder: (oldIndex, newIndex) {
-                      ref
-                          .read(tasksProvider.notifier)
-                          .reorder(oldIndex, newIndex);
-                    },
-                    itemBuilder: (_, i) => TaskCard(
-                      key: ValueKey(tasks[i].id),
-                      task: tasks[i],
-                      index: i,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      body: groups.isEmpty
+          ? _FlatBody(tasks: tasks)
+          : _GroupedBody(groups: groups, tasks: tasks),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _openAddSheet(context),
+        onPressed: () => _openTaskSheet(context),
         child: const Icon(Icons.add),
       ),
       bottomSheet: pending.isEmpty
@@ -67,17 +58,152 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  void _openAddSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  void _openTaskSheet(BuildContext context) => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => const AddTaskSheet(),
+      );
+
+  void _openGroupSheet(BuildContext context) => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => const AddGroupSheet(),
+      );
+}
+
+// ── Flat view (no groups) ────────────────────────────────────────────────────
+
+class _FlatBody extends ConsumerWidget {
+  const _FlatBody({required this.tasks});
+
+  final List<Task> tasks;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (tasks.isEmpty) {
+      return _EmptyState(
+        onAddTask: () => _openTaskSheet(context),
+        onAddGroup: () => _openGroupSheet(context),
+      );
+    }
+    return Column(
+      children: [
+        _ProgressHeader(tasks: tasks),
+        Expanded(
+          child: ReorderableListView.builder(
+            padding: const EdgeInsets.only(bottom: 120),
+            itemCount: tasks.length,
+            onReorder: (oldIndex, newIndex) =>
+                ref.read(tasksProvider.notifier).reorder(oldIndex, newIndex),
+            itemBuilder: (_, i) => TaskCard(
+              key: ValueKey(tasks[i].id),
+              task: tasks[i],
+              index: i,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _openTaskSheet(BuildContext context) => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => const AddTaskSheet(),
+      );
+
+  void _openGroupSheet(BuildContext context) => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => const AddGroupSheet(),
+      );
+}
+
+// ── Grouped view ─────────────────────────────────────────────────────────────
+
+class _GroupedBody extends ConsumerWidget {
+  const _GroupedBody({required this.groups, required this.tasks});
+
+  final List<TaskGroup> groups;
+  final List<Task> tasks;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ungrouped = tasks.where((t) => t.groupId == null).toList();
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (tasks.isNotEmpty) _ProgressHeader(tasks: tasks),
+          for (final group in groups)
+            GroupSection(
+              key: ValueKey(group.id),
+              group: group,
+              tasks: tasks.where((t) => t.groupId == group.id).toList(),
+            ),
+          if (ungrouped.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 8, 6),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Other',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              itemCount: ungrouped.length,
+              onReorder: (oldIndex, newIndex) =>
+                  ref.read(tasksProvider.notifier).reorderGroup(null, oldIndex, newIndex),
+              itemBuilder: (_, i) => TaskCard(
+                key: ValueKey(ungrouped[i].id),
+                task: ungrouped[i],
+                index: i,
+              ),
+            ),
+          ],
+          const SizedBox(height: 120),
+        ],
       ),
-      builder: (_) => const AddTaskSheet(),
     );
   }
 }
+
+// ── Shared sub-widgets ────────────────────────────────────────────────────────
 
 class _ProgressHeader extends StatelessWidget {
   const _ProgressHeader({required this.tasks});
@@ -133,10 +259,7 @@ class _ProgressHeader extends StatelessWidget {
 }
 
 class _StartSessionBar extends StatelessWidget {
-  const _StartSessionBar({
-    required this.pendingCount,
-    required this.onStart,
-  });
+  const _StartSessionBar({required this.pendingCount, required this.onStart});
 
   final int pendingCount;
   final VoidCallback onStart;
@@ -165,9 +288,10 @@ class _StartSessionBar extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onAdd});
+  const _EmptyState({required this.onAddTask, required this.onAddGroup});
 
-  final VoidCallback onAdd;
+  final VoidCallback onAddTask;
+  final VoidCallback onAddGroup;
 
   @override
   Widget build(BuildContext context) {
@@ -208,9 +332,15 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             FilledButton.icon(
-              onPressed: onAdd,
+              onPressed: onAddTask,
               icon: const Icon(Icons.add),
               label: const Text('Add first task'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onAddGroup,
+              icon: const Icon(Icons.create_new_folder_outlined, size: 18),
+              label: const Text('Create a group'),
             ),
           ],
         ),
