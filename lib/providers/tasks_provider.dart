@@ -53,6 +53,26 @@ class TasksNotifier extends StateNotifier<List<Task>> {
     _save();
   }
 
+  void reorderGroup(String? groupId, int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) newIndex--;
+    final groupTasks = state.where((t) => t.groupId == groupId).toList();
+    final item = groupTasks.removeAt(oldIndex);
+    groupTasks.insert(newIndex, item);
+    int i = 0;
+    state = [
+      for (final t in state) t.groupId == groupId ? groupTasks[i++] : t,
+    ];
+    _save();
+  }
+
+  void ungroupByGroupId(String groupId) {
+    state = [
+      for (final t in state)
+        t.groupId == groupId ? t.copyWith(groupId: null) : t,
+    ];
+    _save();
+  }
+
   void resetDone() {
     state = [for (final t in state) t.copyWith(isDone: false)];
     _save();
