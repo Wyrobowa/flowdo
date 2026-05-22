@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
@@ -8,24 +9,71 @@ class SoundService {
   static final _player = AudioPlayer();
   static const _sr = 44100;
 
-  // Bell-like wave with harmonics and fast-attack / exponential-decay envelope
+  static const _definitions = <String, List<(double, double)>>{
+    'tick':      [(880.0, 0.12)],
+    'focus_end': [(659.0, 0.55), (523.0, 0.50)],
+    'break_end': [(523.0, 0.22), (784.0, 0.45)],
+    'complete':  [(523.0, 0.22), (659.0, 0.22), (784.0, 0.55)],
+  };
+
+  static Future<void> init() async {
+    await Future.wait(
+      _definitions.entries.map((e) => _write(e.key, e.value)),
+    );
+  }
+
+  static String _path(String name) =>
+      '${Directory.systemTemp.path}/flowdo_$name.wav';
+
+  static Future<void> _write(String name, List<(double, double)> notes) =>
+      File(_path(name)).writeAsBytes(_buildWav(notes), flush: true);
+
+  static Future<void> _play(String name) async {
+    try {
+      await _player.stop();
+      await _player.play(DeviceFileSource(_path(name)));
+    } catch (_) {}
+  }
+
   static Uint8List _buildWav(List<(double freq, double dur)> notes) {
+    final gapSamples = (_sr * 0.015).toInt(); // 15 ms silence between notes
     final pcm = <int>[];
-    for (final (freq, dur) in notes) {
+
+    for (var ni = 0; ni < notes.length; ni++) {
+      final (freq, dur) = notes[ni];
       final n = (_sr * dur).round();
+      const attackSecs = 0.025; // 25 ms soft attack
+      final releaseSecs = (dur * 0.30).clamp(0.04, 0.18);
+      final releaseStart = dur - releaseSecs;
+
       for (var i = 0; i < n; i++) {
         final t = i / _sr;
-        final attack = (t / 0.008).clamp(0.0, 1.0);
-        final decay = exp(-4.5 * t / dur);
-        final env = attack * decay * 0.32;
-        final wave = sin(2 * pi * freq * t)
-            + 0.28 * sin(4 * pi * freq * t)
-            + 0.08 * sin(6 * pi * freq * t);
+
+        // Smooth ADSR: linear attack → gentle exponential decay → linear release
+        final attack = (t / attackSecs).clamp(0.0, 1.0);
+        final release = t >= releaseStart
+            ? 1.0 - ((t - releaseStart) / releaseSecs).clamp(0.0, 1.0)
+            : 1.0;
+        final decay = exp(-1.8 * t / dur);
+        final env = attack * release * decay * 0.33;
+
+        // Pure tone with a single soft 2nd harmonic — no harsh overtones
+        final wave = sin(2 * pi * freq * t) + 0.10 * sin(4 * pi * freq * t);
+
         final s = (wave * env * 32767).clamp(-32767.0, 32767.0).round();
         pcm.add(s & 0xFF);
         pcm.add((s >> 8) & 0xFF);
       }
+
+      // Silence gap between notes (skip after last note)
+      if (ni < notes.length - 1) {
+        for (var i = 0; i < gapSamples; i++) {
+          pcm.add(0);
+          pcm.add(0);
+        }
+      }
     }
+
     return _wav(pcm);
   }
 
@@ -52,29 +100,8 @@ class SoundService {
     return Uint8List.fromList([...h.buffer.asUint8List(), ...pcm]);
   }
 
-  static Future<void> _play(List<(double, double)> notes) async {
-    try {
-      await _player.stop();
-      await _player.play(BytesSource(_buildWav(notes)));
-    } catch (_) {}
-  }
-
-  /// Two descending tones — focus phase done, break time.
-  static Future<void> focusEnd() => _play([
-        (659.0, 0.65), // E5
-        (523.0, 0.55), // C5
-      ]);
-
-  /// Two ascending tones — break over, back to work.
-  static Future<void> breakEnd() => _play([
-        (523.0, 0.20), // C5
-        (784.0, 0.42), // G5
-      ]);
-
-  /// Rising C-major arpeggio — session complete!
-  static Future<void> sessionComplete() => _play([
-        (523.0, 0.20), // C5
-        (659.0, 0.20), // E5
-        (784.0, 0.55), // G5
-      ]);
+  static Future<void> tick() => _play('tick');
+  static Future<void> focusEnd() => _play('focus_end');
+  static Future<void> breakEnd() => _play('break_end');
+  static Future<void> sessionComplete() => _play('complete');
 }
