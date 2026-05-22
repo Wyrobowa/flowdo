@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 extension AppTheme on BuildContext {
   bool get _isDark => Theme.of(this).brightness == Brightness.dark;
 
-  /// Warm chip / container background (e.g. unselected chips, number circles).
+  /// Unselected chip / number circle background.
   Color get chipSurface =>
-      _isDark ? const Color(0xFF2C2825) : const Color(0xFFF0EDE9);
+      _isDark ? const Color(0xFF2C1A08) : const Color(0xFFE5D5B8);
 
-  /// Slightly deeper surface used for progress tracks and the timer ring.
+  /// Progress tracks and timer ring background.
   Color get trackSurface =>
-      _isDark ? const Color(0xFF252220) : const Color(0xFFEDE9E4);
+      _isDark ? const Color(0xFF241206) : const Color(0xFFDDCCA5);
 
-  /// Card / sheet surface (e.g. mode-select cards).
+  /// Mode-select cards and bottom sheet surfaces.
   Color get cardSurface =>
-      _isDark ? const Color(0xFF1E1B18) : Colors.white;
+      _isDark ? const Color(0xFF211508) : const Color(0xFFEDE4D0);
 }
