@@ -1,5 +1,4 @@
 import 'package:go_router/go_router.dart';
-import 'screens/group_detail_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/mode_select_screen.dart';
 import 'screens/session_screen.dart';
@@ -11,19 +10,7 @@ final router = GoRouter(
     GoRoute(path: '/', builder: (_, _) => const ModeSelectScreen()),
     GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
     GoRoute(path: '/timer', builder: (_, _) => const TimerScreen()),
-    GoRoute(
-      path: '/tasks',
-      builder: (_, _) => const HomeScreen(mode: HomeMode.tasks),
-    ),
-    GoRoute(
-      path: '/groups',
-      builder: (_, _) => const HomeScreen(mode: HomeMode.groups),
-    ),
-    GoRoute(
-      path: '/groups/:id',
-      builder: (_, state) =>
-          GroupDetailScreen(groupId: state.pathParameters['id']!),
-    ),
+    GoRoute(path: '/tasks', builder: (_, _) => const HomeScreen()),
     GoRoute(path: '/session', builder: (_, _) => const SessionScreen()),
   ],
 );

@@ -4,23 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 class FeaturesState {
   final bool timer;
   final bool tasks;
-  final bool groups;
 
-  const FeaturesState({
-    this.timer = true,
-    this.tasks = true,
-    this.groups = true,
-  });
+  const FeaturesState({this.timer = true, this.tasks = true});
 
-  int get enabledCount =>
-      (timer ? 1 : 0) + (tasks ? 1 : 0) + (groups ? 1 : 0);
+  int get enabledCount => (timer ? 1 : 0) + (tasks ? 1 : 0);
 
-  FeaturesState copyWith({bool? timer, bool? tasks, bool? groups}) =>
-      FeaturesState(
-        timer: timer ?? this.timer,
-        tasks: tasks ?? this.tasks,
-        groups: groups ?? this.groups,
-      );
+  FeaturesState copyWith({bool? timer, bool? tasks}) =>
+      FeaturesState(timer: timer ?? this.timer, tasks: tasks ?? this.tasks);
 }
 
 class FeaturesNotifier extends StateNotifier<FeaturesState> {
@@ -33,30 +23,13 @@ class FeaturesNotifier extends StateNotifier<FeaturesState> {
     state = FeaturesState(
       timer: prefs.getBool('feature_timer') ?? true,
       tasks: prefs.getBool('feature_tasks') ?? true,
-      groups: prefs.getBool('feature_groups') ?? true,
     );
   }
 
-  Future<void> setTimer(bool val) => _update(
-        state.copyWith(timer: val),
-        key: 'feature_timer',
-        val: val,
-      );
+  Future<void> setTimer(bool val) => _update(state.copyWith(timer: val), 'feature_timer', val);
+  Future<void> setTasks(bool val) => _update(state.copyWith(tasks: val), 'feature_tasks', val);
 
-  Future<void> setTasks(bool val) => _update(
-        state.copyWith(tasks: val),
-        key: 'feature_tasks',
-        val: val,
-      );
-
-  Future<void> setGroups(bool val) => _update(
-        state.copyWith(groups: val),
-        key: 'feature_groups',
-        val: val,
-      );
-
-  Future<void> _update(FeaturesState next, {required String key, required bool val}) async {
-    // Always keep at least one mode enabled.
+  Future<void> _update(FeaturesState next, String key, bool val) async {
     if (next.enabledCount == 0) return;
     state = next;
     final prefs = await SharedPreferences.getInstance();
@@ -64,7 +37,6 @@ class FeaturesNotifier extends StateNotifier<FeaturesState> {
   }
 }
 
-final featuresProvider =
-    StateNotifierProvider<FeaturesNotifier, FeaturesState>(
+final featuresProvider = StateNotifierProvider<FeaturesNotifier, FeaturesState>(
   (ref) => FeaturesNotifier(),
 );

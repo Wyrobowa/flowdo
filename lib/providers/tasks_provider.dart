@@ -14,19 +14,15 @@ class TasksNotifier extends StateNotifier<List<Task>> {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
     if (raw != null) {
-      final list = (jsonDecode(raw) as List)
+      state = (jsonDecode(raw) as List)
           .map((e) => Task.fromJson(e as Map<String, dynamic>))
           .toList();
-      state = list;
     }
   }
 
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode(state.map((t) => t.toJson()).toList()),
-    );
+    await prefs.setString(_key, jsonEncode(state.map((t) => t.toJson()).toList()));
   }
 
   void add(Task task) {
@@ -50,26 +46,6 @@ class TasksNotifier extends StateNotifier<List<Task>> {
     final item = list.removeAt(oldIndex);
     list.insert(newIndex, item);
     state = list;
-    _save();
-  }
-
-  void reorderGroup(String? groupId, int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) newIndex--;
-    final groupTasks = state.where((t) => t.groupId == groupId).toList();
-    final item = groupTasks.removeAt(oldIndex);
-    groupTasks.insert(newIndex, item);
-    int i = 0;
-    state = [
-      for (final t in state) t.groupId == groupId ? groupTasks[i++] : t,
-    ];
-    _save();
-  }
-
-  void ungroupByGroupId(String groupId) {
-    state = [
-      for (final t in state)
-        t.groupId == groupId ? t.copyWith(groupId: null) : t,
-    ];
     _save();
   }
 

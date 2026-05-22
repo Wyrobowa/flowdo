@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
 import '../providers/features_provider.dart';
-import '../providers/groups_provider.dart';
 import '../providers/tasks_provider.dart';
 
 class ModeSelectScreen extends ConsumerWidget {
@@ -13,7 +12,6 @@ class ModeSelectScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final features = ref.watch(featuresProvider);
     final tasks = ref.watch(tasksProvider);
-    final groups = ref.watch(groupsProvider);
     final pendingTasks = tasks.where((t) => !t.isDone).length;
     final accent = Theme.of(context).colorScheme.primary;
 
@@ -83,17 +81,6 @@ class ModeSelectScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 14),
               ],
-              if (features.groups)
-                _ModeCard(
-                  color: accent,
-                  icon: Icons.folder_open_rounded,
-                  title: 'Groups & tasks',
-                  description: 'Organise your work into groups like Work or Personal.',
-                  badge: groups.isNotEmpty
-                      ? '${groups.length} group${groups.length == 1 ? '' : 's'}'
-                      : null,
-                  onTap: () => context.go('/groups'),
-                ),
             ],
           ),
         ),

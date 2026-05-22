@@ -51,15 +51,6 @@ class SettingsScreen extends ConsumerWidget {
                   onChanged: (v) =>
                       ref.read(featuresProvider.notifier).setTasks(v),
                 ),
-                _Divider(),
-                _ToggleRow(
-                  label: 'Groups & tasks',
-                  description: 'Tasks organised by project or area.',
-                  value: features.groups,
-                  enabled: !(features.groups && features.enabledCount == 1),
-                  onChanged: (v) =>
-                      ref.read(featuresProvider.notifier).setGroups(v),
-                ),
               ],
             ),
           ),
