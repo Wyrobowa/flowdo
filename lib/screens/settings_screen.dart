@@ -19,6 +19,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final defaultFocus = ref.watch(defaultFocusProvider);
     final defaultBreak = ref.watch(defaultBreakProvider);
+    final countdownSeconds = ref.watch(countdownSecondsProvider);
     final notifEnabled = ref.watch(notificationsEnabledProvider);
     final soundsEnabled = ref.watch(soundsEnabledProvider);
 
@@ -112,6 +113,24 @@ class SettingsScreen extends ConsumerWidget {
                   onChanged: (d) => ref
                       .read(defaultBreakProvider.notifier)
                       .set(d.inSeconds.clamp(0, 86399)),
+                ),
+                const SizedBox(height: 20),
+                _RowLabel('Countdown warning'),
+                const SizedBox(height: 12),
+                Row(
+                  children: [3, 5, 7, 10].map((secs) {
+                    final selected = countdownSeconds == secs;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text('${secs}s'),
+                        selected: selected,
+                        onSelected: (_) => ref
+                            .read(countdownSecondsProvider.notifier)
+                            .set(secs.clamp(3, 10)),
+                      ),
+                    );
+                  }).toList(),
                 ),
               ],
             ),

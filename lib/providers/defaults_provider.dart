@@ -30,3 +30,8 @@ final defaultBreakProvider =
     StateNotifierProvider<_DefaultIntNotifier, int>(
   (ref) => _DefaultIntNotifier('default_break_s', 5 * 60),
 );
+
+final countdownSecondsProvider =
+    StateNotifierProvider<_DefaultIntNotifier, int>(
+  (ref) => _DefaultIntNotifier('countdown_s', 5),
+);

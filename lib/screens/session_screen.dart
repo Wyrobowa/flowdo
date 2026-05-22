@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/defaults_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/tasks_provider.dart';
 
@@ -37,18 +38,19 @@ class SessionScreen extends ConsumerWidget {
   }
 }
 
-class _ActiveSession extends StatelessWidget {
+class _ActiveSession extends ConsumerWidget {
   const _ActiveSession({required this.session, required this.ref});
 
   final SessionState session;
   final WidgetRef ref;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef wRef) {
     final cs = Theme.of(context).colorScheme;
     final task = session.currentTask;
     final isBreak = session.phase == SessionPhase.breakTime;
     final phaseColor = cs.primary;
+    final countdownSeconds = wRef.watch(countdownSecondsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -148,6 +150,7 @@ class _ActiveSession extends StatelessWidget {
                     secondsRemaining: session.secondsRemaining,
                     color: phaseColor,
                     isRunning: session.isRunning,
+                    countdownSeconds: countdownSeconds,
                   ),
                 ],
               ),
@@ -224,12 +227,14 @@ class _CircularTimer extends StatefulWidget {
     required this.secondsRemaining,
     required this.color,
     required this.isRunning,
+    required this.countdownSeconds,
   });
 
   final double progress;
   final int secondsRemaining;
   final Color color;
   final bool isRunning;
+  final int countdownSeconds;
 
   @override
   State<_CircularTimer> createState() => _CircularTimerState();
@@ -267,7 +272,7 @@ class _CircularTimerState extends State<_CircularTimer>
   }
 
   bool get _isCountdown =>
-      widget.isRunning && widget.secondsRemaining <= 5 && widget.secondsRemaining > 0;
+      widget.isRunning && widget.secondsRemaining <= widget.countdownSeconds && widget.secondsRemaining > 0;
 
   @override
   Widget build(BuildContext context) {

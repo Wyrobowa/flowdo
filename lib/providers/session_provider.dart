@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task.dart';
+import '../providers/defaults_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/sounds_provider.dart';
 import '../providers/stats_provider.dart';
@@ -133,7 +134,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         _advance(s);
       } else {
         state = s.copyWith(secondsRemaining: remaining);
-        if (remaining <= 5) _sound(SoundService.tick);
+        if (remaining <= _ref.read(countdownSecondsProvider)) _sound(SoundService.tick);
       }
     });
   }
