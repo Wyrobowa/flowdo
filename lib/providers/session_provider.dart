@@ -35,8 +35,8 @@ class SessionState {
     final task = currentTask;
     if (task == null) return 1;
     return phase == SessionPhase.focus
-        ? task.focusMinutes * 60
-        : task.breakMinutes * 60;
+        ? task.focusSeconds
+        : task.breakSeconds;
   }
 
   double get progress =>
@@ -85,7 +85,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
       tasks: tasks,
       currentIndex: 0,
       phase: SessionPhase.focus,
-      secondsRemaining: first.focusMinutes * 60,
+      secondsRemaining: first.focusSeconds,
       isRunning: true,
       cycleSize: cycleSize,
       origin: origin,
@@ -140,7 +140,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
     final isLastTask = s.currentIndex + 1 >= s.tasks.length;
 
     if (s.phase == SessionPhase.focus) {
-      final breakSecs = (s.currentTask?.breakMinutes ?? 0) * 60;
+      final breakSecs = s.currentTask?.breakSeconds ?? 0;
       _notify(
         '${s.currentTask?.title ?? "Task"} done!',
         breakSecs > 0 ? 'Time for a break.' : 'Moving to next task.',
@@ -180,7 +180,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
       state = s.copyWith(
         currentIndex: nextIndex,
         phase: SessionPhase.focus,
-        secondsRemaining: next.focusMinutes * 60,
+        secondsRemaining: next.focusSeconds,
         isRunning: true,
       );
       _startTicking();

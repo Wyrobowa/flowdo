@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
@@ -8,6 +7,7 @@ import '../providers/features_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/sounds_provider.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/duration_picker.dart';
 import '../services/notification_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -98,24 +98,20 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 _RowLabel('Focus time'),
                 const SizedBox(height: 12),
-                _ChipRow(
-                  options: const [5, 10, 15, 20, 25, 30, 45, 60, 90],
-                  selected: defaultFocus,
-                  label: (v) => '${v}m',
-                  activeColor: Theme.of(context).colorScheme.primary,
-                  onSelected: (v) =>
-                      ref.read(defaultFocusProvider.notifier).set(v),
+                DurationPicker(
+                  initial: Duration(seconds: defaultFocus),
+                  onChanged: (d) => ref
+                      .read(defaultFocusProvider.notifier)
+                      .set(d.inSeconds.clamp(30, 86399)),
                 ),
                 const SizedBox(height: 20),
                 _RowLabel('Break after'),
                 const SizedBox(height: 12),
-                _ChipRow(
-                  options: const [0, 5, 10, 15, 20],
-                  selected: defaultBreak,
-                  label: (v) => v == 0 ? 'None' : '${v}m',
-                  activeColor: Theme.of(context).colorScheme.primary,
-                  onSelected: (v) =>
-                      ref.read(defaultBreakProvider.notifier).set(v),
+                DurationPicker(
+                  initial: Duration(seconds: defaultBreak),
+                  onChanged: (d) => ref
+                      .read(defaultBreakProvider.notifier)
+                      .set(d.inSeconds.clamp(0, 86399)),
                 ),
               ],
             ),
@@ -322,52 +318,3 @@ class _ToggleRow extends StatelessWidget {
   }
 }
 
-class _ChipRow extends StatelessWidget {
-  const _ChipRow({
-    required this.options,
-    required this.selected,
-    required this.label,
-    required this.activeColor,
-    required this.onSelected,
-  });
-
-  final List<int> options;
-  final int selected;
-  final String Function(int) label;
-  final Color activeColor;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: options.map((v) {
-        final sel = v == selected;
-        return GestureDetector(
-          onTap: () {
-              HapticFeedback.selectionClick();
-              onSelected(v);
-            },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: sel ? activeColor : context.chipSurface,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              label(v),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: sel ? Colors.white : cs.onSurface,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}

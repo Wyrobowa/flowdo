@@ -6,6 +6,7 @@ import '../extensions.dart';
 import '../models/task.dart';
 import '../providers/defaults_provider.dart';
 import '../providers/session_provider.dart';
+import '../widgets/duration_picker.dart';
 
 class TimerScreen extends ConsumerStatefulWidget {
   const TimerScreen({super.key});
@@ -15,27 +16,27 @@ class TimerScreen extends ConsumerStatefulWidget {
 }
 
 class _TimerScreenState extends ConsumerState<TimerScreen> {
-  late int _focusMinutes;
-  late int _breakMinutes;
+  late Duration _focusDuration;
+  late Duration _breakDuration;
   int _cycles = 1;
 
-  static const _focusOptions = [5, 10, 15, 20, 25, 30, 45, 60, 90];
-  static const _breakOptions = [0, 5, 10, 15, 20];
   static const _cycleOptions = [1, 2, 3, 4, 5, 6, 8];
 
   @override
   void initState() {
     super.initState();
-    _focusMinutes = ref.read(defaultFocusProvider);
-    _breakMinutes = ref.read(defaultBreakProvider);
+    _focusDuration = Duration(seconds: ref.read(defaultFocusProvider));
+    _breakDuration = Duration(seconds: ref.read(defaultBreakProvider));
   }
 
   void _start() {
     HapticFeedback.mediumImpact();
+    final focusSecs = _focusDuration.inSeconds.clamp(30, 86399);
+    final breakSecs = _breakDuration.inSeconds.clamp(0, 86399);
     final task = Task(
       title: 'Focus',
-      focusMinutes: _focusMinutes,
-      breakMinutes: _breakMinutes,
+      focusSeconds: focusSecs,
+      breakSeconds: breakSecs,
     );
     final tasks = List.generate(_cycles, (_) => task);
     ref.read(sessionProvider.notifier).start(
@@ -64,37 +65,57 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Label('Focus for'),
+              const _Label('Focus for'),
               const SizedBox(height: 12),
-              _ChipRow(
-                options: _focusOptions,
-                selected: _focusMinutes,
-                label: (v) => '${v}m',
-                activeColor: cs.primary,
-                onSelected: (v) => setState(() => _focusMinutes = v),
+              DurationPicker(
+                initial: _focusDuration,
+                onChanged: (d) => setState(() => _focusDuration = d),
               ),
-              const SizedBox(height: 32),
-              _Label('Then break for'),
+              const SizedBox(height: 28),
+              const _Label('Then break for'),
               const SizedBox(height: 12),
-              _ChipRow(
-                options: _breakOptions,
-                selected: _breakMinutes,
-                label: (v) => v == 0 ? 'None' : '${v}m',
-                activeColor: cs.primary,
-                onSelected: (v) => setState(() => _breakMinutes = v),
+              DurationPicker(
+                initial: _breakDuration,
+                onChanged: (d) => setState(() => _breakDuration = d),
               ),
-              const SizedBox(height: 32),
-              _Label('Repeat'),
+              const SizedBox(height: 28),
+              const _Label('Repeat'),
               const SizedBox(height: 12),
-              _ChipRow(
-                options: _cycleOptions,
-                selected: _cycles,
-                label: (v) => '${v}×',
-                activeColor: cs.primary,
-                onSelected: (v) => setState(() => _cycles = v),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _cycleOptions.map((v) {
+                  final sel = v == _cycles;
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => _cycles = v);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: sel ? cs.primary : context.chipSurface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${v}×',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: sel ? Colors.white : cs.onSurface,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
               const Spacer(),
-              _Preview(focusMinutes: _focusMinutes, breakMinutes: _breakMinutes, cycles: _cycles),
+              _Preview(
+                focusDuration: _focusDuration,
+                breakDuration: _breakDuration,
+                cycles: _cycles,
+              ),
               const SizedBox(height: 28),
               FilledButton.icon(
                 onPressed: _start,
@@ -124,61 +145,15 @@ class _Label extends StatelessWidget {
       );
 }
 
-class _ChipRow extends StatelessWidget {
-  const _ChipRow({
-    required this.options,
-    required this.selected,
-    required this.label,
-    required this.activeColor,
-    required this.onSelected,
+class _Preview extends StatelessWidget {
+  const _Preview({
+    required this.focusDuration,
+    required this.breakDuration,
+    required this.cycles,
   });
 
-  final List<int> options;
-  final int selected;
-  final String Function(int) label;
-  final Color activeColor;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: options.map((v) {
-        final sel = v == selected;
-        return GestureDetector(
-          onTap: () {
-              HapticFeedback.selectionClick();
-              onSelected(v);
-            },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            decoration: BoxDecoration(
-              color: sel ? activeColor : context.chipSurface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              label(v),
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: sel ? Colors.white : cs.onSurface,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _Preview extends StatelessWidget {
-  const _Preview({required this.focusMinutes, required this.breakMinutes, required this.cycles});
-
-  final int focusMinutes;
-  final int breakMinutes;
+  final Duration focusDuration;
+  final Duration breakDuration;
   final int cycles;
 
   @override
@@ -196,10 +171,10 @@ class _Preview extends StatelessWidget {
         children: [
           _PreviewPill(
             icon: Icons.timer_outlined,
-            label: '${focusMinutes}m focus',
+            label: '${focusDuration.pretty} focus',
             color: cs.primary,
           ),
-          if (breakMinutes > 0) ...[
+          if (breakDuration.inSeconds > 0) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Icon(
@@ -210,7 +185,7 @@ class _Preview extends StatelessWidget {
             ),
             _PreviewPill(
               icon: Icons.coffee_outlined,
-              label: '${breakMinutes}m break',
+              label: '${breakDuration.pretty} break',
               color: cs.onSurface.withValues(alpha: 0.5),
             ),
           ],

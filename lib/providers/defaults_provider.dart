@@ -20,12 +20,13 @@ class _DefaultIntNotifier extends StateNotifier<int> {
   }
 }
 
+// Keys use _s suffix to store seconds (old keys stored minutes — separate namespace)
 final defaultFocusProvider =
     StateNotifierProvider<_DefaultIntNotifier, int>(
-  (ref) => _DefaultIntNotifier('default_focus', 25),
+  (ref) => _DefaultIntNotifier('default_focus_s', 25 * 60),
 );
 
 final defaultBreakProvider =
     StateNotifierProvider<_DefaultIntNotifier, int>(
-  (ref) => _DefaultIntNotifier('default_break', 5),
+  (ref) => _DefaultIntNotifier('default_break_s', 5 * 60),
 );

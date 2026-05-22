@@ -105,14 +105,14 @@ class TaskCard extends ConsumerWidget {
                         children: [
                           _TimeChip(
                             icon: Icons.timer_outlined,
-                            label: '${task.focusMinutes}m',
+                            label: Duration(seconds: task.focusSeconds).pretty,
                             color: cs.onSurface.withValues(alpha: 0.4),
                           ),
-                          if (task.breakMinutes > 0) ...[
+                          if (task.breakSeconds > 0) ...[
                             const SizedBox(width: 6),
                             _TimeChip(
                               icon: Icons.coffee_outlined,
-                              label: '${task.breakMinutes}m break',
+                              label: '${Duration(seconds: task.breakSeconds).pretty} break',
                               color: cs.onSurface.withValues(alpha: 0.4),
                             ),
                           ],
