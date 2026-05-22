@@ -78,7 +78,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                 options: _breakOptions,
                 selected: _breakMinutes,
                 label: (v) => v == 0 ? 'None' : '${v}m',
-                activeColor: cs.secondary,
+                activeColor: cs.primary,
                 onSelected: (v) => setState(() => _breakMinutes = v),
               ),
               const SizedBox(height: 32),
@@ -88,7 +88,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                 options: _cycleOptions,
                 selected: _cycles,
                 label: (v) => '${v}×',
-                activeColor: const Color(0xFF22C55E),
+                activeColor: cs.primary,
                 onSelected: (v) => setState(() => _cycles = v),
               ),
               const Spacer(),
@@ -206,7 +206,7 @@ class _Preview extends StatelessWidget {
             _PreviewPill(
               icon: Icons.coffee_outlined,
               label: '${breakMinutes}m break',
-              color: cs.secondary,
+              color: cs.onSurface.withValues(alpha: 0.5),
             ),
           ],
           if (cycles > 1) ...[
@@ -221,7 +221,7 @@ class _Preview extends StatelessWidget {
             _PreviewPill(
               icon: Icons.repeat_rounded,
               label: '×$cycles',
-              color: const Color(0xFF22C55E),
+              color: cs.onSurface.withValues(alpha: 0.5),
             ),
           ],
         ],

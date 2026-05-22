@@ -119,7 +119,7 @@ class SettingsScreen extends ConsumerWidget {
                   options: const [0, 5, 10, 15, 20],
                   selected: defaultBreak,
                   label: (v) => v == 0 ? 'None' : '${v}m',
-                  activeColor: Theme.of(context).colorScheme.secondary,
+                  activeColor: Theme.of(context).colorScheme.primary,
                   onSelected: (v) =>
                       ref.read(defaultBreakProvider.notifier).set(v),
                 ),

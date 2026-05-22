@@ -101,7 +101,7 @@ class _TasksBody extends ConsumerWidget {
     if (tasks.isEmpty) {
       return _EmptyState(
         icon: Icons.checklist_rounded,
-        color: const Color(0xFF3B82F6),
+        color: Theme.of(context).colorScheme.primary,
         title: 'No tasks yet',
         description: 'Add tasks with custom focus time\nand breaks, then start your flow.',
         actionLabel: 'Add first task',
@@ -149,7 +149,7 @@ class _GroupsBody extends ConsumerWidget {
     if (groups.isEmpty && ungrouped.isEmpty) {
       return _EmptyState(
         icon: Icons.folder_open_rounded,
-        color: const Color(0xFFA855F7),
+        color: Theme.of(context).colorScheme.primary,
         title: 'No groups yet',
         description: 'Create groups like Work or Personal\nto organise your tasks.',
         actionLabel: 'Create first group',

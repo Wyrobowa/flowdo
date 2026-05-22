@@ -41,7 +41,7 @@ class _ActiveSession extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final task = session.currentTask;
     final isBreak = session.phase == SessionPhase.breakTime;
-    final phaseColor = isBreak ? cs.secondary : cs.primary;
+    final phaseColor = cs.primary;
 
     return Scaffold(
       appBar: AppBar(

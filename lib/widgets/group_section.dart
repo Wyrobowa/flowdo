@@ -62,7 +62,7 @@ class GroupSection extends ConsumerWidget {
               if (pending.isNotEmpty) ...[
                 const SizedBox(width: 6),
                 Material(
-                  color: group.color,
+                  color: Theme.of(context).colorScheme.primary,
                   shape: const CircleBorder(),
                   child: InkWell(
                     customBorder: const CircleBorder(),

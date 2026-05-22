@@ -15,6 +15,7 @@ class ModeSelectScreen extends ConsumerWidget {
     final tasks = ref.watch(tasksProvider);
     final groups = ref.watch(groupsProvider);
     final pendingTasks = tasks.where((t) => !t.isDone).length;
+    final accent = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       body: SafeArea(
@@ -54,7 +55,7 @@ class ModeSelectScreen extends ConsumerWidget {
               const SizedBox(height: 40),
               if (features.timer) ...[
                 _ModeCard(
-                  color: const Color(0xFFE05A2B),
+                  color: accent,
                   icon: Icons.timer_outlined,
                   title: 'Quick timer',
                   description: 'Set a duration and start focusing — no setup needed.',
@@ -65,7 +66,7 @@ class ModeSelectScreen extends ConsumerWidget {
               ],
               if (features.tasks) ...[
                 _ModeCard(
-                  color: const Color(0xFF3B82F6),
+                  color: accent,
                   icon: Icons.checklist_rounded,
                   title: 'Tasks & breaks',
                   description: 'Add tasks with custom focus time and breaks.',
@@ -78,7 +79,7 @@ class ModeSelectScreen extends ConsumerWidget {
               ],
               if (features.groups)
                 _ModeCard(
-                  color: const Color(0xFFA855F7),
+                  color: accent,
                   icon: Icons.folder_open_rounded,
                   title: 'Groups & tasks',
                   description: 'Organise your work into groups like Work or Personal.',
