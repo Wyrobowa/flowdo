@@ -8,7 +8,7 @@
 PRODUCT_NAME = flowdo
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.flowdo.flowdo
+PRODUCT_BUNDLE_IDENTIFIER = com.wyrobowa.flowdo
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.flowdo. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.wyrobowa. All rights reserved.

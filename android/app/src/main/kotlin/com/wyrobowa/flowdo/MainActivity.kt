@@ -1,4 +1,4 @@
-package com.flowdo.flowdo
+package com.wyrobowa.flowdo
 
 import io.flutter.embedding.android.FlutterActivity
 
