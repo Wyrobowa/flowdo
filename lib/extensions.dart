@@ -5,13 +5,13 @@ extension AppTheme on BuildContext {
 
   /// Unselected chip / number circle background.
   Color get chipSurface =>
-      _isDark ? const Color(0xFF2C484C) : const Color(0xFFE8CCBC);
+      _isDark ? const Color(0xFF2E1E0A) : const Color(0xFFE4E0A5);
 
   /// Progress tracks and timer ring background.
   Color get trackSurface =>
-      _isDark ? const Color(0xFF223A3D) : const Color(0xFFDFBFAA);
+      _isDark ? const Color(0xFF261608) : const Color(0xFFD8D490);
 
   /// Mode-select cards and bottom sheet surfaces.
   Color get cardSurface =>
-      _isDark ? const Color(0xFF243C3F) : const Color(0xFFF0D9CC);
+      _isDark ? const Color(0xFF241808) : const Color(0xFFEDEAB8);
 }
