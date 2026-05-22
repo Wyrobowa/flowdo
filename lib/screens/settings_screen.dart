@@ -102,7 +102,7 @@ class SettingsScreen extends ConsumerWidget {
                   initial: Duration(seconds: defaultFocus),
                   onChanged: (d) => ref
                       .read(defaultFocusProvider.notifier)
-                      .set(d.inSeconds.clamp(30, 86399)),
+                      .set(d.inSeconds.clamp(1, 86399)),
                 ),
                 const SizedBox(height: 20),
                 _RowLabel('Break after'),

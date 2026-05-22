@@ -31,7 +31,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
 
   void _start() {
     HapticFeedback.mediumImpact();
-    final focusSecs = _focusDuration.inSeconds.clamp(30, 86399);
+    final focusSecs = _focusDuration.inSeconds.clamp(1, 86399);
     final breakSecs = _breakDuration.inSeconds.clamp(0, 86399);
     final task = Task(
       title: 'Focus',

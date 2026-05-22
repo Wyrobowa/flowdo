@@ -44,7 +44,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
     HapticFeedback.lightImpact();
     final title = _titleCtrl.text.trim();
     if (title.isEmpty) return;
-    final focusSecs = _focusDuration.inSeconds.clamp(30, 86399);
+    final focusSecs = _focusDuration.inSeconds.clamp(1, 86399);
     final breakSecs = _breakDuration.inSeconds.clamp(0, 86399);
     final notifier = ref.read(tasksProvider.notifier);
     if (widget.task == null) {
