@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
 import '../providers/features_provider.dart';
+import '../providers/stats_provider.dart';
 import '../providers/tasks_provider.dart';
 
 class ModeSelectScreen extends ConsumerWidget {
@@ -14,6 +15,7 @@ class ModeSelectScreen extends ConsumerWidget {
     final tasks = ref.watch(tasksProvider);
     final pendingTasks = tasks.where((t) => !t.isDone).length;
     final accent = Theme.of(context).colorScheme.primary;
+    final stats = ref.watch(statsProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -81,10 +83,67 @@ class ModeSelectScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 14),
               ],
+              if (stats.hasStats) ...[
+                const SizedBox(height: 8),
+                _StatsRow(stats: stats),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({required this.stats});
+  final StatsState stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _StatBadge(
+          icon: Icons.check_circle_outline,
+          label: '${stats.totalSessions} session${stats.totalSessions == 1 ? '' : 's'}',
+        ),
+        if (stats.currentStreak > 1) ...[
+          const SizedBox(width: 14),
+          _StatBadge(
+            icon: Icons.local_fire_department_outlined,
+            label: '${stats.currentStreak}d streak',
+            highlighted: true,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StatBadge extends StatelessWidget {
+  const _StatBadge({required this.icon, required this.label, this.highlighted = false});
+  final IconData icon;
+  final String label;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final color = highlighted ? cs.primary : cs.onSurface.withValues(alpha: 0.4);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 }

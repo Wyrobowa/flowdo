@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,12 @@ class SessionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<SessionState?>(sessionProvider, (prev, next) {
+      if (prev?.phase != next?.phase && next != null) {
+        HapticFeedback.mediumImpact();
+      }
+    });
+
     final session = ref.watch(sessionProvider);
 
     if (session == null) {
@@ -53,6 +60,7 @@ class _ActiveSession extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () {
+              HapticFeedback.lightImpact();
               final origin = session.origin;
               ref.read(sessionProvider.notifier).stop();
               context.go(origin);
@@ -106,7 +114,30 @@ class _ActiveSession extends StatelessWidget {
                                     height: 1.3,
                                   ),
                                 ),
-                                const SizedBox(height: 48),
+                                const SizedBox(height: 14),
+                                GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    ref.read(tasksProvider.notifier).markDone(task.id);
+                                    ref.read(sessionProvider.notifier).skip();
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.check_rounded, size: 13, color: phaseColor.withValues(alpha: 0.4)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Done early',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: phaseColor.withValues(alpha: 0.4),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 34),
                               ],
                             ),
                           )
@@ -411,7 +442,10 @@ class _ControlButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
-          onTap: onTap,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             width: size,

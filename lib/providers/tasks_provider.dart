@@ -60,6 +60,13 @@ class TasksNotifier extends StateNotifier<List<Task>> {
     ];
     _save();
   }
+
+  void toggleDone(String id) {
+    state = [
+      for (final t in state) t.id == id ? t.copyWith(isDone: !t.isDone) : t,
+    ];
+    _save();
+  }
 }
 
 final tasksProvider = StateNotifierProvider<TasksNotifier, List<Task>>(

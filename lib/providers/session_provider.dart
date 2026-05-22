@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task.dart';
 import '../providers/notifications_provider.dart';
+import '../providers/stats_provider.dart';
 import '../services/notification_service.dart';
 
 enum SessionPhase { focus, breakTime, done }
@@ -115,14 +116,20 @@ class SessionNotifier extends StateNotifier<SessionState?> {
   }
 
   void _startTicking() {
+    _timer?.cancel();
+    final startedAt = DateTime.now();
+    final initialRemaining = state?.secondsRemaining ?? 0;
+
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       final s = state;
       if (s == null || !s.isRunning) return;
-      if (s.secondsRemaining <= 1) {
+      final elapsed = DateTime.now().difference(startedAt).inSeconds;
+      final remaining = (initialRemaining - elapsed).clamp(0, initialRemaining);
+      if (remaining <= 0) {
         _timer?.cancel();
         _advance(s);
       } else {
-        state = s.copyWith(secondsRemaining: s.secondsRemaining - 1);
+        state = s.copyWith(secondsRemaining: remaining);
       }
     });
   }
@@ -159,6 +166,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         isRunning: false,
       );
       _notify('Session complete!', 'All done. Great work!');
+      _ref.read(statsProvider.notifier).recordSession();
     } else {
       final next = s.tasks[nextIndex];
       state = s.copyWith(

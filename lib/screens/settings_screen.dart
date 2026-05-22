@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
@@ -331,7 +332,10 @@ class _ChipRow extends StatelessWidget {
       children: options.map((v) {
         final sel = v == selected;
         return GestureDetector(
-          onTap: () => onSelected(v),
+          onTap: () {
+              HapticFeedback.selectionClick();
+              onSelected(v);
+            },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

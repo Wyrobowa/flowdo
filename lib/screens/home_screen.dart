@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
@@ -169,7 +170,10 @@ class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: GestureDetector(
-                    onTap: () => setState(() => _cycles = v),
+                    onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _cycles = v);
+                      },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -194,6 +198,7 @@ class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
           const SizedBox(height: 10),
           FilledButton.icon(
             onPressed: () {
+              HapticFeedback.mediumImpact();
               final pending = ref.read(pendingTasksProvider);
               final tasks = _cycles > 1
                   ? [for (var i = 0; i < _cycles; i++) ...pending]

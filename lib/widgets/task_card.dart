@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../extensions.dart';
 import '../models/task.dart';
@@ -38,7 +39,12 @@ class TaskCard extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                AnimatedContainer(
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    ref.read(tasksProvider.notifier).toggleDone(task.id);
+                  },
+                  child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOut,
                   width: 28,
@@ -70,6 +76,7 @@ class TaskCard extends ConsumerWidget {
                               ),
                             ),
                           ),
+                  ),
                   ),
                 ),
                 const SizedBox(width: 12),

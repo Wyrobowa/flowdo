@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../extensions.dart';
 import '../models/task.dart';
@@ -43,6 +44,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   }
 
   void _save() {
+    HapticFeedback.lightImpact();
     final title = _titleCtrl.text.trim();
     if (title.isEmpty) return;
     final notifier = ref.read(tasksProvider.notifier);
@@ -198,7 +200,10 @@ class _ChipRow extends StatelessWidget {
       children: options.map((v) {
         final isSelected = v == selected;
         return GestureDetector(
-          onTap: () => onSelected(v),
+          onTap: () {
+              HapticFeedback.selectionClick();
+              onSelected(v);
+            },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
