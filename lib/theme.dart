@@ -67,7 +67,7 @@ ThemeData get darkTheme => ThemeData(
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: const Color(0xFF1E1E1E),
+        color: const Color(0xFF1C1C1C),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -78,7 +78,7 @@ ThemeData get darkTheme => ThemeData(
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF2A2A2A),
+        fillColor: const Color(0xFF2E2E2E),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
