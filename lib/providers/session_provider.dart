@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
 import '../providers/defaults_provider.dart';
 import '../providers/notifications_provider.dart';
@@ -70,8 +73,14 @@ class SessionState {
       );
 }
 
+const _kSession = 'persisted_session';
+
 class SessionNotifier extends StateNotifier<SessionState?> {
-  SessionNotifier(this._ref) : super(null);
+  SessionNotifier(this._ref) : super(null) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _restoreIfNeeded();
+    });
+  }
 
   final Ref _ref;
   Timer? _timer;
@@ -91,6 +100,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
       cycleSize: cycleSize,
       origin: origin,
     );
+    _persist();
     _startTicking();
   }
 
@@ -104,6 +114,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
       _startTicking();
     }
     state = s.copyWith(isRunning: !s.isRunning);
+    _persist();
   }
 
   void skip() {
@@ -117,6 +128,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
   void stop() {
     _timer?.cancel();
     NotificationService.cancelAll();
+    _clearPersisted();
     state = null;
   }
 
@@ -143,6 +155,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         _advance(s);
       } else {
         state = s.copyWith(secondsRemaining: remaining);
+        _persist();
         if (remaining <= _ref.read(countdownSecondsProvider)) _sound(SoundService.tick);
       }
     });
@@ -195,6 +208,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
       );
       _notify('Session complete!', 'All done. Great work!');
       _ref.read(statsProvider.notifier).recordSession(s);
+      _clearPersisted();
     } else {
       final next = s.tasks[nextIndex];
       state = s.copyWith(
@@ -215,6 +229,73 @@ class SessionNotifier extends StateNotifier<SessionState?> {
 
   void _sound(Future<void> Function() fn) {
     if (_ref.read(soundsEnabledProvider)) fn();
+  }
+
+  Future<void> _persist() async {
+    final s = state;
+    if (s == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final data = {
+      'tasks': s.tasks.map((t) => t.toJson()).toList(),
+      'currentIndex': s.currentIndex,
+      'phase': s.phase.name,
+      'secondsRemaining': s.secondsRemaining,
+      'isRunning': s.isRunning,
+      'cycleSize': s.cycleSize,
+      'origin': s.origin,
+      'savedAt': DateTime.now().toIso8601String(),
+    };
+    await prefs.setString(_kSession, jsonEncode(data));
+  }
+
+  Future<void> _clearPersisted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kSession);
+  }
+
+  Future<void> _restoreIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_kSession);
+    if (raw == null) return;
+
+    final data = jsonDecode(raw) as Map<String, dynamic>;
+    final wasRunning = data['isRunning'] as bool? ?? false;
+    if (!wasRunning) return;
+
+    final savedAt = DateTime.tryParse(data['savedAt'] as String? ?? '');
+    if (savedAt == null) return;
+
+    final elapsed = DateTime.now().difference(savedAt).inSeconds;
+    if (elapsed > 86400) {
+      // More than 24h ago — discard
+      await _clearPersisted();
+      return;
+    }
+
+    final tasks = (data['tasks'] as List)
+        .map((e) => Task.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    final phaseName = data['phase'] as String? ?? 'focus';
+    final phase = SessionPhase.values.firstWhere(
+      (p) => p.name == phaseName,
+      orElse: () => SessionPhase.focus,
+    );
+
+    final savedRemaining = data['secondsRemaining'] as int? ?? 0;
+    final adjustedRemaining = (savedRemaining - elapsed).clamp(0, savedRemaining);
+
+    state = SessionState(
+      tasks: tasks,
+      currentIndex: data['currentIndex'] as int? ?? 0,
+      phase: phase,
+      secondsRemaining: adjustedRemaining,
+      isRunning: true,
+      cycleSize: data['cycleSize'] as int? ?? 0,
+      origin: data['origin'] as String? ?? '/',
+    );
+
+    _startTicking();
   }
 
   @override
