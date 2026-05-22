@@ -32,15 +32,6 @@ class GroupSection extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(20, 20, 8, 6),
           child: Row(
             children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: group.color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   group.name,

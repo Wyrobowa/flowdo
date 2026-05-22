@@ -15,14 +15,11 @@ class AddGroupSheet extends ConsumerStatefulWidget {
 
 class _AddGroupSheetState extends ConsumerState<AddGroupSheet> {
   late final TextEditingController _nameCtrl;
-  int _colorIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    final g = widget.group;
-    _nameCtrl = TextEditingController(text: g?.name ?? '');
-    _colorIndex = g?.colorIndex ?? 0;
+    _nameCtrl = TextEditingController(text: widget.group?.name ?? '');
     _nameCtrl.addListener(() => setState(() {}));
   }
 
@@ -65,15 +62,16 @@ class _AddGroupSheetState extends ConsumerState<AddGroupSheet> {
     if (name.isEmpty) return;
     final notifier = ref.read(groupsProvider.notifier);
     if (widget.group == null) {
-      notifier.add(TaskGroup(name: name, colorIndex: _colorIndex));
+      notifier.add(TaskGroup(name: name));
     } else {
-      notifier.update(widget.group!.copyWith(name: name, colorIndex: _colorIndex));
+      notifier.update(widget.group!.copyWith(name: name));
     }
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isValid = _nameCtrl.text.trim().isNotEmpty;
 
     return Padding(
@@ -96,10 +94,7 @@ class _AddGroupSheetState extends ConsumerState<AddGroupSheet> {
               if (widget.group != null) ...[
                 const Spacer(),
                 IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                  icon: Icon(Icons.delete_outline, color: cs.error),
                   tooltip: 'Delete group',
                   onPressed: _confirmDelete,
                 ),
@@ -114,54 +109,9 @@ class _AddGroupSheetState extends ConsumerState<AddGroupSheet> {
             decoration: const InputDecoration(hintText: 'Group name'),
             onSubmitted: (_) => _save(),
           ),
-          const SizedBox(height: 20),
-          Text(
-            'COLOR',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: List.generate(groupColors.length, (i) {
-              final selected = i == _colorIndex;
-              return GestureDetector(
-                onTap: () => setState(() => _colorIndex = i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: groupColors[i],
-                    shape: BoxShape.circle,
-                    boxShadow: selected
-                        ? [
-                            BoxShadow(
-                              color: groupColors[i].withValues(alpha: 0.45),
-                              blurRadius: 8,
-                              spreadRadius: 1,
-                            )
-                          ]
-                        : null,
-                  ),
-                  child: selected
-                      ? const Icon(Icons.check, color: Colors.white, size: 18)
-                      : null,
-                ),
-              );
-            }),
-          ),
           const SizedBox(height: 28),
           FilledButton(
             onPressed: isValid ? _save : null,
-            style: FilledButton.styleFrom(
-              backgroundColor: groupColors[_colorIndex],
-            ),
             child: Text(widget.group == null ? 'Create group' : 'Save changes'),
           ),
         ],
