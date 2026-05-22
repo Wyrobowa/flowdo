@@ -129,16 +129,29 @@ class SessionNotifier extends StateNotifier<SessionState?> {
       final remaining = (initialRemaining - elapsed).clamp(0, initialRemaining);
       if (remaining <= 0) {
         _timer?.cancel();
+        _playTransitionSound(s);
         _advance(s);
       } else {
         state = s.copyWith(secondsRemaining: remaining);
+        if (remaining <= 5) _sound(SoundService.tick);
       }
     });
   }
 
-  void _advance(SessionState s) {
+  void _playTransitionSound(SessionState s) {
     final isLastTask = s.currentIndex + 1 >= s.tasks.length;
+    final focusNoBreak = s.phase == SessionPhase.focus &&
+        (s.currentTask?.breakSeconds ?? 0) == 0;
+    if (isLastTask && (s.phase == SessionPhase.breakTime || focusNoBreak)) {
+      _sound(SoundService.sessionComplete);
+    } else if (s.phase == SessionPhase.focus) {
+      _sound(SoundService.focusEnd);
+    } else {
+      _sound(SoundService.breakEnd);
+    }
+  }
 
+  void _advance(SessionState s) {
     if (s.phase == SessionPhase.focus) {
       final breakSecs = s.currentTask?.breakSeconds ?? 0;
       _notify(
@@ -146,7 +159,6 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         breakSecs > 0 ? 'Time for a break.' : 'Moving to next task.',
       );
       if (breakSecs > 0) {
-        _sound(SoundService.focusEnd);
         state = s.copyWith(
           phase: SessionPhase.breakTime,
           secondsRemaining: breakSecs,
@@ -154,12 +166,10 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         );
         _startTicking();
       } else {
-        if (!isLastTask) _sound(SoundService.focusEnd);
         _nextTask(s);
       }
     } else {
       _notify('Break over!', 'Back to work!');
-      if (!isLastTask) _sound(SoundService.breakEnd);
       _nextTask(s);
     }
   }
@@ -173,7 +183,6 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         isRunning: false,
       );
       _notify('Session complete!', 'All done. Great work!');
-      _sound(SoundService.sessionComplete);
       _ref.read(statsProvider.notifier).recordSession();
     } else {
       final next = s.tasks[nextIndex];
