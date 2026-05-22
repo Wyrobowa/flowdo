@@ -113,6 +113,7 @@ class _TasksBody extends ConsumerWidget {
         _ProgressHeader(tasks: tasks),
         Expanded(
           child: ReorderableListView.builder(
+            buildDefaultDragHandles: false,
             padding: const EdgeInsets.only(bottom: 120),
             itemCount: tasks.length,
             onReorder: (oldIndex, newIndex) =>
@@ -197,6 +198,7 @@ class _GroupsBody extends ConsumerWidget {
               ),
             ),
             ReorderableListView.builder(
+              buildDefaultDragHandles: false,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               padding: EdgeInsets.zero,

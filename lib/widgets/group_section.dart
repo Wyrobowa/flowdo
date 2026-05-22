@@ -123,6 +123,7 @@ class GroupSection extends ConsumerWidget {
           )
         else
           ReorderableListView.builder(
+            buildDefaultDragHandles: false,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
