@@ -266,8 +266,13 @@ class _CircularTimerState extends State<_CircularTimer>
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  bool get _isCountdown =>
+      widget.isRunning && widget.secondsRemaining <= 5 && widget.secondsRemaining > 0;
+
   @override
   Widget build(BuildContext context) {
+    final countdown = _isCountdown;
+
     return AnimatedBuilder(
       animation: _pulse,
       builder: (_, __) {
@@ -302,13 +307,35 @@ class _CircularTimerState extends State<_CircularTimer>
                     arcColor: widget.color,
                   ),
                   child: Center(
-                    child: Text(
-                      _timeLabel,
-                      style: const TextStyle(
-                        fontSize: 52,
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: -2,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, anim) => ScaleTransition(
+                        scale: Tween<double>(begin: 1.45, end: 1.0)
+                            .animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
+                        child: FadeTransition(opacity: anim, child: child),
                       ),
+                      child: countdown
+                          ? Text(
+                              '${widget.secondsRemaining}',
+                              key: ValueKey(widget.secondsRemaining),
+                              style: TextStyle(
+                                fontSize: 96,
+                                fontWeight: FontWeight.w700,
+                                color: widget.color,
+                                letterSpacing: -4,
+                              ),
+                            )
+                          : Text(
+                              _timeLabel,
+                              key: const ValueKey('time'),
+                              style: const TextStyle(
+                                fontSize: 52,
+                                fontWeight: FontWeight.w300,
+                                letterSpacing: -2,
+                              ),
+                            ),
                     ),
                   ),
                 ),
