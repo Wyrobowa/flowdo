@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../providers/notifications_provider.dart';
 import '../services/notification_service.dart';
 import '../services/sound_service.dart';
 
@@ -36,41 +35,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final firstLaunch = prefs.getBool('notification_prompted') != true;
+    final onboardingDone = prefs.getBool('onboarding_done') == true;
 
-    if (firstLaunch && mounted) {
-      await prefs.setBool('notification_prompted', true);
-      _spin.stop();
-
-      if (!mounted) return;
-      final allow = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Stay on track'),
-          content: const Text(
-            'Get notified when your focus or break time ends.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Not now'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Allow'),
-            ),
-          ],
-        ),
-      );
-
-      if (allow == true && mounted) {
-        final granted = await NotificationService.requestPermission();
-        ref.read(notificationsEnabledProvider.notifier).set(granted);
-      }
+    if (mounted) {
+      context.go(onboardingDone ? '/' : '/onboarding');
     }
-
-    if (mounted) context.go('/');
   }
 
   @override
