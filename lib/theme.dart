@@ -1,32 +1,32 @@
 import 'package:flutter/material.dart';
 
-// Phosphor green — terminal CRT accent.
-const _seed = Color(0xFF22C55E);
+// Neon magenta-violet — synthwave accent.
+const _seed = Color(0xFFAA00FF);
 
-// Light: pale-green tinted paper, dark forest-green text.
+// Light: pale lavender, deep-purple text.
 ThemeData get appTheme => ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: _seed,
         brightness: Brightness.light,
       ),
-      scaffoldBackgroundColor: const Color(0xFFEEF5EC),
+      scaffoldBackgroundColor: const Color(0xFFF4EEFF),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFEEF5EC),
+        backgroundColor: Color(0xFFF4EEFF),
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF0A2010),
+          color: Color(0xFF1A0A2E),
           letterSpacing: -0.5,
         ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: const Color(0xFFE0EFDe),
+        color: const Color(0xFFEAD8FF),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -37,7 +37,7 @@ ThemeData get appTheme => ThemeData(
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFD5E8D2),
+        fillColor: const Color(0xFFDFC8FF),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -47,30 +47,30 @@ ThemeData get appTheme => ThemeData(
       ),
     );
 
-// Dark: near-black CRT screen, phosphor green glow.
+// Dark: deep purple-black, neon lavender glow.
 ThemeData get darkTheme => ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: _seed,
         brightness: Brightness.dark,
       ),
-      scaffoldBackgroundColor: const Color(0xFF080F06),
+      scaffoldBackgroundColor: const Color(0xFF120820),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF080F06),
+        backgroundColor: Color(0xFF120820),
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w700,
-          color: Color(0xFFC8F0B0),
+          color: Color(0xFFE8D5FF),
           letterSpacing: -0.5,
         ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: const Color(0xFF0F1A0C),
+        color: const Color(0xFF1E0D36),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -81,7 +81,7 @@ ThemeData get darkTheme => ThemeData(
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF172012),
+        fillColor: const Color(0xFF2A1248),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
