@@ -1,16 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../extensions.dart';
 import '../providers/features_provider.dart';
+import '../providers/notifications_provider.dart';
 import '../providers/stats_provider.dart';
 import '../providers/tasks_provider.dart';
+import '../services/notification_service.dart';
 
-class ModeSelectScreen extends ConsumerWidget {
+class ModeSelectScreen extends ConsumerStatefulWidget {
   const ModeSelectScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ModeSelectScreen> createState() => _ModeSelectScreenState();
+}
+
+class _ModeSelectScreenState extends ConsumerState<ModeSelectScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptNotifications());
+  }
+
+  Future<void> _maybePromptNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('notification_prompted') == true) return;
+    await prefs.setBool('notification_prompted', true);
+    if (!mounted) return;
+
+    final allow = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Stay on track'),
+        content: const Text(
+          'Get notified when your focus or break time ends.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Allow'),
+          ),
+        ],
+      ),
+    );
+
+    if (allow != true || !mounted) return;
+    final granted = await NotificationService.requestPermission();
+    ref.read(notificationsEnabledProvider.notifier).set(granted);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final features = ref.watch(featuresProvider);
     final tasks = ref.watch(tasksProvider);
     final pendingTasks = tasks.where((t) => !t.isDone).length;

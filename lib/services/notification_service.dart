@@ -11,6 +11,10 @@ class NotificationService {
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
+      // Show banner/alert even while the app is in the foreground
+      defaultPresentAlert: true,
+      defaultPresentBanner: true,
+      defaultPresentSound: false, // we play our own sounds
     );
     await _plugin.initialize(
       const InitializationSettings(android: android, iOS: darwin, macOS: darwin),

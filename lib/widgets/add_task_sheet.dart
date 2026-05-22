@@ -72,7 +72,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
       mainAxisSize: MainAxisSize.min,
       children: [
         const _SheetHandle(),
-        Padding(
+        SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             24,
             12,

@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/mode_select_screen.dart';
 import 'screens/session_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/splash_screen.dart';
 import 'screens/timer_screen.dart';
 
 Page<void> _slide(GoRouterState state, Widget child) => CustomTransitionPage(
@@ -22,7 +23,9 @@ Page<void> _slide(GoRouterState state, Widget child) => CustomTransitionPage(
     );
 
 final router = GoRouter(
+  initialLocation: '/splash',
   routes: [
+    GoRoute(path: '/splash', pageBuilder: (_, s) => _slide(s, const SplashScreen())),
     GoRoute(path: '/', pageBuilder: (_, s) => _slide(s, const ModeSelectScreen())),
     GoRoute(path: '/settings', pageBuilder: (_, s) => _slide(s, const SettingsScreen())),
     GoRoute(path: '/timer', pageBuilder: (_, s) => _slide(s, const TimerScreen())),
