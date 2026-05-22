@@ -40,12 +40,6 @@ class HomeScreen extends ConsumerWidget {
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Reset'),
             ),
-          if (mode == HomeMode.groups)
-            IconButton(
-              onPressed: () => _openGroupSheet(context),
-              icon: const Icon(Icons.create_new_folder_outlined),
-              tooltip: 'New group',
-            ),
           const SizedBox(width: 4),
         ],
       ),
