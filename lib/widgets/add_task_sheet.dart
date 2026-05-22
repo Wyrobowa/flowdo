@@ -88,9 +88,24 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.task == null ? 'New task' : 'Edit task',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          Row(
+            children: [
+              Text(
+                widget.task == null ? 'New task' : 'Edit task',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
+              if (widget.task != null) ...[
+                const Spacer(),
+                IconButton(
+                  icon: Icon(Icons.delete_outline, color: cs.error),
+                  tooltip: 'Delete task',
+                  onPressed: () {
+                    ref.read(tasksProvider.notifier).remove(widget.task!.id);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 20),
           TextField(
