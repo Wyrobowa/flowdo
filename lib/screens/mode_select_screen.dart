@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../extensions.dart';
 import '../providers/groups_provider.dart';
 import '../providers/tasks_provider.dart';
+import '../providers/theme_provider.dart';
 
 class ModeSelectScreen extends ConsumerWidget {
   const ModeSelectScreen({super.key});
@@ -20,7 +22,12 @@ class ModeSelectScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 48),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [_ThemeToggle()],
+              ),
+              const SizedBox(height: 16),
               const Text(
                 'Flowdo',
                 style: TextStyle(
@@ -76,6 +83,23 @@ class ModeSelectScreen extends ConsumerWidget {
   }
 }
 
+class _ThemeToggle extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeModeProvider);
+    final (icon, next, tooltip) = switch (mode) {
+      ThemeMode.light  => (Icons.dark_mode_outlined,       ThemeMode.dark,   'Switch to dark'),
+      ThemeMode.dark   => (Icons.brightness_auto_outlined, ThemeMode.system, 'Follow system'),
+      ThemeMode.system => (Icons.light_mode_outlined,      ThemeMode.light,  'Switch to light'),
+    };
+    return IconButton(
+      icon: Icon(icon),
+      tooltip: tooltip,
+      onPressed: () => ref.read(themeModeProvider.notifier).set(next),
+    );
+  }
+}
+
 class _ModeCard extends StatelessWidget {
   const _ModeCard({
     required this.color,
@@ -97,7 +121,7 @@ class _ModeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Material(
-      color: Colors.white,
+      color: context.cardSurface,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),

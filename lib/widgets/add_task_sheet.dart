@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../extensions.dart';
 import '../models/task.dart';
 import '../models/task_group.dart';
 import '../providers/groups_provider.dart';
@@ -193,7 +194,7 @@ class _GroupChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.15) : const Color(0xFFF0EDE9),
+          color: isSelected ? color.withValues(alpha: 0.15) : context.chipSurface,
           borderRadius: BorderRadius.circular(10),
           border: isSelected ? Border.all(color: color, width: 1.5) : null,
         ),
@@ -264,7 +265,7 @@ class _ChipRow extends StatelessWidget {
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? cs.primary : const Color(0xFFF0EDE9),
+              color: isSelected ? cs.primary : context.chipSurface,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../extensions.dart';
 import '../models/task.dart';
 import '../providers/tasks_provider.dart';
 import 'add_task_sheet.dart';
@@ -43,7 +44,7 @@ class TaskCard extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: task.isDone
                         ? cs.primary.withValues(alpha: 0.15)
-                        : const Color(0xFFF0EDE9),
+                        : context.chipSurface,
                     shape: BoxShape.circle,
                   ),
                   child: task.isDone

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../extensions.dart';
 import '../models/task.dart';
 import '../models/task_group.dart';
 import '../providers/groups_provider.dart';
@@ -265,7 +266,7 @@ class _ProgressHeader extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 5,
-              backgroundColor: const Color(0xFFEDE9E4),
+              backgroundColor: context.trackSurface,
             ),
           ),
         ],
@@ -348,7 +349,7 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade500,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                 height: 1.5,
               ),
             ),

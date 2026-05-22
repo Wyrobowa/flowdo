@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/session_provider.dart';
@@ -129,7 +130,7 @@ class _TaskProgress extends StatelessWidget {
                       ? color
                       : active
                           ? color.withValues(alpha: 0.5)
-                          : const Color(0xFFEDE9E4),
+                          : context.trackSurface,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -164,7 +165,7 @@ class _CircularTimer extends StatelessWidget {
       child: CustomPaint(
         painter: _TimerPainter(
           progress: progress,
-          trackColor: const Color(0xFFEDE9E4),
+          trackColor: context.trackSurface,
           arcColor: color,
         ),
         child: Center(

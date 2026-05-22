@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../extensions.dart';
 import '../models/task.dart';
 import '../providers/session_provider.dart';
 
@@ -125,7 +126,7 @@ class _ChipRow extends StatelessWidget {
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             decoration: BoxDecoration(
-              color: sel ? activeColor : const Color(0xFFF0EDE9),
+              color: sel ? activeColor : context.chipSurface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -156,7 +157,7 @@ class _Preview extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0EDE9),
+        color: context.trackSurface,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
