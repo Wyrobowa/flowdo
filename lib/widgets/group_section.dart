@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 import '../models/task.dart';
 import '../models/task_group.dart';
 import '../providers/groups_provider.dart';
@@ -33,12 +34,16 @@ class GroupSection extends ConsumerWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  group.name,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
+                child: GestureDetector(
+                  onTap: () => context.go('/groups/${group.id}'),
+                  behavior: HitTestBehavior.opaque,
+                  child: Text(
+                    group.name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                    ),
                   ),
                 ),
               ),

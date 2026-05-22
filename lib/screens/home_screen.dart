@@ -57,7 +57,9 @@ class HomeScreen extends ConsumerWidget {
               onAddGroup: () => _openGroupSheet(context),
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _openTaskSheet(context),
+        onPressed: mode == HomeMode.groups
+            ? () => _openGroupSheet(context)
+            : () => _openTaskSheet(context),
         child: const Icon(Icons.add),
       ),
       bottomSheet: pending.isEmpty
