@@ -12,6 +12,7 @@ class SessionState {
   final SessionPhase phase;
   final int secondsRemaining;
   final bool isRunning;
+  final int cycleSize; // 0 = no looping; N = N tasks per cycle
 
   const SessionState({
     required this.tasks,
@@ -19,6 +20,7 @@ class SessionState {
     required this.phase,
     required this.secondsRemaining,
     required this.isRunning,
+    this.cycleSize = 0,
   });
 
   Task? get currentTask =>
@@ -35,6 +37,16 @@ class SessionState {
   double get progress =>
       totalSeconds > 0 ? secondsRemaining / totalSeconds : 0;
 
+  // Cycle-aware progress helpers
+  int get currentCycle =>
+      cycleSize > 0 ? currentIndex ~/ cycleSize + 1 : 1;
+  int get totalCycles =>
+      cycleSize > 0 ? tasks.length ~/ cycleSize : 1;
+  int get indexInCycle =>
+      cycleSize > 0 ? currentIndex % cycleSize : currentIndex;
+  int get tasksPerCycle =>
+      cycleSize > 0 ? cycleSize : tasks.length;
+
   SessionState copyWith({
     int? currentIndex,
     SessionPhase? phase,
@@ -47,6 +59,7 @@ class SessionState {
         phase: phase ?? this.phase,
         secondsRemaining: secondsRemaining ?? this.secondsRemaining,
         isRunning: isRunning ?? this.isRunning,
+        cycleSize: cycleSize,
       );
 }
 
@@ -56,7 +69,8 @@ class SessionNotifier extends StateNotifier<SessionState?> {
   final Ref _ref;
   Timer? _timer;
 
-  void start(List<Task> tasks) {
+  /// [cycleSize] — how many tasks form one cycle. 0 means no looping.
+  void start(List<Task> tasks, {int cycleSize = 0}) {
     _timer?.cancel();
     if (tasks.isEmpty) return;
     final first = tasks.first;
@@ -66,6 +80,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
       phase: SessionPhase.focus,
       secondsRemaining: first.focusMinutes * 60,
       isRunning: true,
+      cycleSize: cycleSize,
     );
     _startTicking();
   }
@@ -138,10 +153,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         secondsRemaining: 0,
         isRunning: false,
       );
-      _notify(
-        'Session complete!',
-        'All ${s.tasks.length} tasks done. Great work!',
-      );
+      _notify('Session complete!', 'All done. Great work!');
     } else {
       final next = s.tasks[nextIndex];
       state = s.copyWith(
