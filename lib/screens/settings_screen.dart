@@ -6,6 +6,7 @@ import '../extensions.dart';
 import '../providers/defaults_provider.dart';
 import '../providers/features_provider.dart';
 import '../providers/notifications_provider.dart';
+import '../providers/sounds_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/notification_service.dart';
 
@@ -19,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
     final defaultFocus = ref.watch(defaultFocusProvider);
     final defaultBreak = ref.watch(defaultBreakProvider);
     final notifEnabled = ref.watch(notificationsEnabledProvider);
+    final soundsEnabled = ref.watch(soundsEnabledProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -119,9 +121,19 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 28),
-          _SectionLabel('Notifications'),
+          _SectionLabel('Sound & notifications'),
           _Card(
-            child: _ToggleRow(
+            child: Column(
+              children: [
+                _ToggleRow(
+                  label: 'Sounds',
+                  description: 'Play a chime when focus or break ends.',
+                  value: soundsEnabled,
+                  onChanged: (val) =>
+                      ref.read(soundsEnabledProvider.notifier).set(val),
+                ),
+                _Divider(),
+                _ToggleRow(
               label: 'Enable notifications',
               description: 'Get alerted when focus or break time ends.',
               value: notifEnabled,
@@ -140,6 +152,8 @@ class SettingsScreen extends ConsumerWidget {
                 }
                 ref.read(notificationsEnabledProvider.notifier).set(val);
               },
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 28),

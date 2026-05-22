@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task.dart';
 import '../providers/notifications_provider.dart';
+import '../providers/sounds_provider.dart';
 import '../providers/stats_provider.dart';
 import '../services/notification_service.dart';
+import '../services/sound_service.dart';
 
 enum SessionPhase { focus, breakTime, done }
 
@@ -135,6 +137,8 @@ class SessionNotifier extends StateNotifier<SessionState?> {
   }
 
   void _advance(SessionState s) {
+    final isLastTask = s.currentIndex + 1 >= s.tasks.length;
+
     if (s.phase == SessionPhase.focus) {
       final breakSecs = (s.currentTask?.breakMinutes ?? 0) * 60;
       _notify(
@@ -142,6 +146,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         breakSecs > 0 ? 'Time for a break.' : 'Moving to next task.',
       );
       if (breakSecs > 0) {
+        _sound(SoundService.focusEnd);
         state = s.copyWith(
           phase: SessionPhase.breakTime,
           secondsRemaining: breakSecs,
@@ -149,10 +154,12 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         );
         _startTicking();
       } else {
+        if (!isLastTask) _sound(SoundService.focusEnd);
         _nextTask(s);
       }
     } else {
       _notify('Break over!', 'Back to work!');
+      if (!isLastTask) _sound(SoundService.breakEnd);
       _nextTask(s);
     }
   }
@@ -166,6 +173,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         isRunning: false,
       );
       _notify('Session complete!', 'All done. Great work!');
+      _sound(SoundService.sessionComplete);
       _ref.read(statsProvider.notifier).recordSession();
     } else {
       final next = s.tasks[nextIndex];
@@ -183,6 +191,10 @@ class SessionNotifier extends StateNotifier<SessionState?> {
     if (_ref.read(notificationsEnabledProvider)) {
       NotificationService.show(title, body);
     }
+  }
+
+  void _sound(Future<void> Function() fn) {
+    if (_ref.read(soundsEnabledProvider)) fn();
   }
 
   @override
