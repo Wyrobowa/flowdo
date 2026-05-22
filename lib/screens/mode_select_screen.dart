@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../extensions.dart';
 import '../providers/groups_provider.dart';
 import '../providers/tasks_provider.dart';
-import '../providers/theme_provider.dart';
 
 class ModeSelectScreen extends ConsumerWidget {
   const ModeSelectScreen({super.key});
@@ -25,7 +24,13 @@ class ModeSelectScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children: [_ThemeToggle()],
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.settings_outlined),
+                    tooltip: 'Settings',
+                    onPressed: () => context.go('/settings'),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               const Text(
@@ -79,23 +84,6 @@ class ModeSelectScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _ThemeToggle extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mode = ref.watch(themeModeProvider);
-    final (icon, next, tooltip) = switch (mode) {
-      ThemeMode.light  => (Icons.dark_mode_outlined,       ThemeMode.dark,   'Switch to dark'),
-      ThemeMode.dark   => (Icons.brightness_auto_outlined, ThemeMode.system, 'Follow system'),
-      ThemeMode.system => (Icons.light_mode_outlined,      ThemeMode.light,  'Switch to light'),
-    };
-    return IconButton(
-      icon: Icon(icon),
-      tooltip: tooltip,
-      onPressed: () => ref.read(themeModeProvider.notifier).set(next),
     );
   }
 }

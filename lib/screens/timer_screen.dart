@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
 import '../models/task.dart';
+import '../providers/defaults_provider.dart';
 import '../providers/session_provider.dart';
 
 class TimerScreen extends ConsumerStatefulWidget {
@@ -13,11 +14,18 @@ class TimerScreen extends ConsumerStatefulWidget {
 }
 
 class _TimerScreenState extends ConsumerState<TimerScreen> {
-  int _focusMinutes = 25;
-  int _breakMinutes = 5;
+  late int _focusMinutes;
+  late int _breakMinutes;
 
   static const _focusOptions = [5, 10, 15, 20, 25, 30, 45, 60, 90];
   static const _breakOptions = [0, 5, 10, 15, 20];
+
+  @override
+  void initState() {
+    super.initState();
+    _focusMinutes = ref.read(defaultFocusProvider);
+    _breakMinutes = ref.read(defaultBreakProvider);
+  }
 
   void _start() {
     final task = Task(

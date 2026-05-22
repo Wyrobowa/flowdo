@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../extensions.dart';
 import '../models/task.dart';
 import '../models/task_group.dart';
+import '../providers/defaults_provider.dart';
 import '../providers/groups_provider.dart';
 import '../providers/tasks_provider.dart';
 
@@ -18,8 +19,8 @@ class AddTaskSheet extends ConsumerStatefulWidget {
 
 class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   late final TextEditingController _titleCtrl;
-  int _focusMinutes = 25;
-  int _breakMinutes = 5;
+  late int _focusMinutes;
+  late int _breakMinutes;
   String? _groupId;
 
   static const _focusOptions = [5, 10, 15, 20, 25, 30, 45, 60, 90];
@@ -36,6 +37,8 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
       _breakMinutes = t.breakMinutes;
       _groupId = t.groupId;
     } else {
+      _focusMinutes = ref.read(defaultFocusProvider);
+      _breakMinutes = ref.read(defaultBreakProvider);
       _groupId = widget.initialGroupId;
     }
   }
