@@ -22,6 +22,7 @@ class SessionScreen extends ConsumerWidget {
       return _DoneScreen(
         cycleCount: session.totalCycles,
         tasksPerCycle: session.tasksPerCycle,
+        origin: session.origin,
       );
     }
 
@@ -52,8 +53,9 @@ class _ActiveSession extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () {
+              final origin = session.origin;
               ref.read(sessionProvider.notifier).stop();
-              context.go('/');
+              context.go(origin);
             },
             child: const Text('End session'),
           ),
@@ -289,8 +291,9 @@ class _Controls extends StatelessWidget {
           icon: Icons.stop_rounded,
           label: 'Stop',
           onTap: () {
+            final origin = session.origin;
             notifier.stop();
-            context.go('/');
+            context.go(origin);
           },
           outlined: true,
         ),
@@ -364,10 +367,15 @@ class _ControlButton extends StatelessWidget {
 }
 
 class _DoneScreen extends StatelessWidget {
-  const _DoneScreen({required this.cycleCount, required this.tasksPerCycle});
+  const _DoneScreen({
+    required this.cycleCount,
+    required this.tasksPerCycle,
+    required this.origin,
+  });
 
   final int cycleCount;
   final int tasksPerCycle;
+  final String origin;
 
   String get _subtitle {
     if (cycleCount > 1 && tasksPerCycle == 1) {
@@ -420,7 +428,7 @@ class _DoneScreen extends StatelessWidget {
                     onPressed: () {
                       ref.read(tasksProvider.notifier).resetDone();
                       ref.read(sessionProvider.notifier).stop();
-                      context.go('/');
+                      context.go(origin);
                     },
                     icon: const Icon(Icons.home_rounded),
                     label: const Text('Back to home'),

@@ -13,6 +13,7 @@ class SessionState {
   final int secondsRemaining;
   final bool isRunning;
   final int cycleSize; // 0 = no looping; N = N tasks per cycle
+  final String origin; // route to return to when session ends
 
   const SessionState({
     required this.tasks,
@@ -21,6 +22,7 @@ class SessionState {
     required this.secondsRemaining,
     required this.isRunning,
     this.cycleSize = 0,
+    this.origin = '/',
   });
 
   Task? get currentTask =>
@@ -60,6 +62,7 @@ class SessionState {
         secondsRemaining: secondsRemaining ?? this.secondsRemaining,
         isRunning: isRunning ?? this.isRunning,
         cycleSize: cycleSize,
+        origin: origin,
       );
 }
 
@@ -70,7 +73,8 @@ class SessionNotifier extends StateNotifier<SessionState?> {
   Timer? _timer;
 
   /// [cycleSize] — how many tasks form one cycle. 0 means no looping.
-  void start(List<Task> tasks, {int cycleSize = 0}) {
+  /// [origin] — the route to navigate back to when the session ends.
+  void start(List<Task> tasks, {int cycleSize = 0, String origin = '/'}) {
     _timer?.cancel();
     if (tasks.isEmpty) return;
     final first = tasks.first;
@@ -81,6 +85,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
       secondsRemaining: first.focusMinutes * 60,
       isRunning: true,
       cycleSize: cycleSize,
+      origin: origin,
     );
     _startTicking();
   }

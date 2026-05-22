@@ -62,7 +62,10 @@ class HomeScreen extends ConsumerWidget {
       ),
       bottomSheet: pending.isEmpty
           ? null
-          : _StartSessionBar(pendingCount: pending.length),
+          : _StartSessionBar(
+              pendingCount: pending.length,
+              origin: mode == HomeMode.tasks ? '/tasks' : '/groups',
+            ),
     );
   }
 
@@ -270,9 +273,10 @@ class _ProgressHeader extends StatelessWidget {
 }
 
 class _StartSessionBar extends ConsumerStatefulWidget {
-  const _StartSessionBar({required this.pendingCount});
+  const _StartSessionBar({required this.pendingCount, required this.origin});
 
   final int pendingCount;
+  final String origin;
 
   @override
   ConsumerState<_StartSessionBar> createState() => _StartSessionBarState();
@@ -344,6 +348,7 @@ class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
               ref.read(sessionProvider.notifier).start(
                 tasks,
                 cycleSize: _cycles > 1 ? pending.length : 0,
+                origin: widget.origin,
               );
               context.go('/session');
             },

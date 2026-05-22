@@ -39,6 +39,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
     ref.read(sessionProvider.notifier).start(
       tasks,
       cycleSize: _cycles > 1 ? 1 : 0,
+      origin: '/timer',
     );
     context.go('/session');
   }
