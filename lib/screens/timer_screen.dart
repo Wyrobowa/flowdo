@@ -60,7 +60,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
         title: const Text('Quick timer'),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +110,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                   );
                 }).toList(),
               ),
-              const Spacer(),
+              const SizedBox(height: 32),
               _Preview(
                 focusDuration: _focusDuration,
                 breakDuration: _breakDuration,
