@@ -182,6 +182,11 @@ class SettingsScreen extends ConsumerWidget {
                   onTap: () => context.go('/history'),
                 ),
                 _Divider(),
+                _NavRow(
+                  label: 'Privacy policy',
+                  onTap: () => context.go('/privacy'),
+                ),
+                _Divider(),
                 _InfoRow(label: 'App', value: 'Flowdo'),
                 _Divider(),
                 _InfoRow(label: 'Version', value: '1.0.0'),

@@ -4,6 +4,7 @@ import 'screens/history_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/mode_select_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/privacy_screen.dart';
 import 'screens/session_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/splash_screen.dart';
@@ -35,5 +36,6 @@ final router = GoRouter(
     GoRoute(path: '/session', pageBuilder: (_, s) => _slide(s, const SessionScreen())),
     GoRoute(path: '/history', pageBuilder: (_, s) => _slide(s, const HistoryScreen())),
     GoRoute(path: '/onboarding', pageBuilder: (_, s) => _slide(s, const OnboardingScreen())),
+    GoRoute(path: '/privacy', pageBuilder: (_, s) => _slide(s, const PrivacyScreen())),
   ],
 );
