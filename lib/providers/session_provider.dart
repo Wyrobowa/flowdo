@@ -99,6 +99,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
     if (s == null || s.phase == SessionPhase.done) return;
     if (s.isRunning) {
       _timer?.cancel();
+      NotificationService.cancel('phase_end');
     } else {
       _startTicking();
     }
@@ -109,6 +110,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
     final s = state;
     if (s == null || s.phase == SessionPhase.done) return;
     _timer?.cancel();
+    NotificationService.cancel('phase_end');
     _advance(s);
   }
 
@@ -120,8 +122,15 @@ class SessionNotifier extends StateNotifier<SessionState?> {
 
   void _startTicking() {
     _timer?.cancel();
+    final s = state;
     final startedAt = DateTime.now();
-    final initialRemaining = state?.secondsRemaining ?? 0;
+    final initialRemaining = s?.secondsRemaining ?? 0;
+
+    // Schedule a notification for when the current phase ends
+    if (s != null) {
+      final dueAt = startedAt.add(Duration(seconds: initialRemaining));
+      NotificationService.schedulePhaseEnd(s.currentTask, s.phase, dueAt);
+    }
 
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       final s = state;
@@ -153,6 +162,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
   }
 
   void _advance(SessionState s) {
+    NotificationService.cancel('phase_end');
     if (s.phase == SessionPhase.focus) {
       final breakSecs = s.currentTask?.breakSeconds ?? 0;
       _notify(
