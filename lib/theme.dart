@@ -10,9 +10,9 @@ ThemeData get appTheme => ThemeData(
         seedColor: _seed,
         brightness: Brightness.light,
       ),
-      scaffoldBackgroundColor: const Color(0xFFF6DCAC),
+      scaffoldBackgroundColor: const Color(0xFFFEF5E4),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFF6DCAC),
+        backgroundColor: Color(0xFFFEF5E4),
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -26,7 +26,7 @@ ThemeData get appTheme => ThemeData(
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: const Color(0xFFF0D09A),
+        color: const Color(0xFFF6DCAC),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -37,7 +37,7 @@ ThemeData get appTheme => ThemeData(
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFE8C485),
+        fillColor: const Color(0xFFEEC87A),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
