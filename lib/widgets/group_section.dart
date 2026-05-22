@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../models/task.dart';
 import '../models/task_group.dart';
 import '../providers/groups_provider.dart';
-import '../providers/session_provider.dart';
 import '../providers/tasks_provider.dart';
 import 'add_group_sheet.dart';
 import 'add_task_sheet.dart';
@@ -55,28 +54,6 @@ class GroupSection extends ConsumerWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              if (pending.isNotEmpty) ...[
-                const SizedBox(width: 6),
-                Material(
-                  color: Theme.of(context).colorScheme.primary,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () {
-                      ref.read(sessionProvider.notifier).start(pending);
-                      context.go('/session');
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
               PopupMenuButton<_Action>(
                 onSelected: (a) => _onAction(context, ref, a),
                 itemBuilder: (_) => const [

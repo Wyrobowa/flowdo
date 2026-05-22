@@ -56,12 +56,9 @@ class HomeScreen extends ConsumerWidget {
             : () => _openTaskSheet(context),
         child: const Icon(Icons.add),
       ),
-      bottomSheet: pending.isEmpty
+      bottomSheet: pending.isEmpty || mode == HomeMode.groups
           ? null
-          : _StartSessionBar(
-              pendingCount: pending.length,
-              origin: mode == HomeMode.tasks ? '/tasks' : '/groups',
-            ),
+          : _StartSessionBar(pendingCount: pending.length, origin: '/tasks'),
     );
   }
 

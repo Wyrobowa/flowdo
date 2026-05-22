@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../extensions.dart';
+import '../models/task.dart';
 import '../providers/groups_provider.dart';
+import '../providers/session_provider.dart';
 import '../providers/tasks_provider.dart';
 import '../widgets/add_group_sheet.dart';
 import '../widgets/add_task_sheet.dart';
@@ -22,7 +25,8 @@ class GroupDetailScreen extends ConsumerWidget {
     }
 
     final tasks = ref.watch(tasksProvider).where((t) => t.groupId == groupId).toList();
-    final doneCount = tasks.where((t) => t.isDone).length;
+    final pending = tasks.where((t) => !t.isDone).toList(); // List<Task>
+    final doneCount = tasks.length - pending.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -71,6 +75,9 @@ class GroupDetailScreen extends ConsumerWidget {
         onPressed: () => _openAddTask(context, groupId: groupId),
         child: const Icon(Icons.add),
       ),
+      bottomSheet: pending.isEmpty
+          ? null
+          : _SessionBar(pending: pending, groupId: groupId),
     );
   }
 
@@ -83,6 +90,96 @@ class GroupDetailScreen extends ConsumerWidget {
         ),
         builder: (_) => AddTaskSheet(initialGroupId: groupId),
       );
+}
+
+class _SessionBar extends ConsumerStatefulWidget {
+  const _SessionBar({required this.pending, required this.groupId});
+  final List<Task> pending;
+  final String groupId;
+
+  @override
+  ConsumerState<_SessionBar> createState() => _SessionBarState();
+}
+
+class _SessionBarState extends ConsumerState<_SessionBar> {
+  int _cycles = 1;
+  static const _cycleOptions = [1, 2, 3, 4, 5];
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        MediaQuery.of(context).padding.bottom + 12,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Repeat',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ..._cycleOptions.map((v) {
+                final sel = v == _cycles;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _cycles = v),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: sel ? cs.primary : context.chipSurface,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${v}×',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: sel ? cs.onPrimary : cs.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: () {
+              final pending = widget.pending;
+              final tasks = _cycles > 1
+                  ? [for (var i = 0; i < _cycles; i++) ...pending]
+                  : pending;
+              ref.read(sessionProvider.notifier).start(
+                tasks,
+                cycleSize: _cycles > 1 ? pending.length : 0,
+                origin: '/groups/${widget.groupId}',
+              );
+              context.go('/session');
+            },
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: Text(
+              'Start session · ${widget.pending.length} task${widget.pending.length == 1 ? '' : 's'}',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _EmptyState extends StatelessWidget {
