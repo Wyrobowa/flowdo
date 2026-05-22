@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
 import '../providers/defaults_provider.dart';
+import '../providers/features_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/notification_service.dart';
@@ -12,6 +13,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final features = ref.watch(featuresProvider);
     final themeMode = ref.watch(themeModeProvider);
     final defaultFocus = ref.watch(defaultFocusProvider);
     final defaultBreak = ref.watch(defaultBreakProvider);
@@ -28,6 +30,40 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
+          _SectionLabel('Modes'),
+          _Card(
+            child: Column(
+              children: [
+                _ToggleRow(
+                  label: 'Quick timer',
+                  description: 'Simple countdown with no task list.',
+                  value: features.timer,
+                  enabled: !(features.timer && features.enabledCount == 1),
+                  onChanged: (v) =>
+                      ref.read(featuresProvider.notifier).setTimer(v),
+                ),
+                _Divider(),
+                _ToggleRow(
+                  label: 'Tasks & breaks',
+                  description: 'Focus blocks linked to a task list.',
+                  value: features.tasks,
+                  enabled: !(features.tasks && features.enabledCount == 1),
+                  onChanged: (v) =>
+                      ref.read(featuresProvider.notifier).setTasks(v),
+                ),
+                _Divider(),
+                _ToggleRow(
+                  label: 'Groups & tasks',
+                  description: 'Tasks organised by project or area.',
+                  value: features.groups,
+                  enabled: !(features.groups && features.enabledCount == 1),
+                  onChanged: (v) =>
+                      ref.read(featuresProvider.notifier).setGroups(v),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
           _SectionLabel('Appearance'),
           _Card(
             child: Column(
@@ -233,12 +269,14 @@ class _ToggleRow extends StatelessWidget {
     required this.description,
     required this.value,
     required this.onChanged,
+    this.enabled = true,
   });
 
   final String label;
   final String description;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -271,7 +309,7 @@ class _ToggleRow extends StatelessWidget {
         const SizedBox(width: 12),
         Switch(
           value: value,
-          onChanged: onChanged,
+          onChanged: enabled ? onChanged : null,
         ),
       ],
     );

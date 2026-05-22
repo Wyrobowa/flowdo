@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
+import '../providers/features_provider.dart';
 import '../providers/groups_provider.dart';
 import '../providers/tasks_provider.dart';
 
@@ -10,6 +11,7 @@ class ModeSelectScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final features = ref.watch(featuresProvider);
     final tasks = ref.watch(tasksProvider);
     final groups = ref.watch(groupsProvider);
     final pendingTasks = tasks.where((t) => !t.isDone).length;
@@ -50,36 +52,41 @@ class ModeSelectScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 40),
-              _ModeCard(
-                color: const Color(0xFFE05A2B),
-                icon: Icons.timer_outlined,
-                title: 'Quick timer',
-                description: 'Set a duration and start focusing — no setup needed.',
-                badge: null,
-                onTap: () => context.go('/timer'),
-              ),
-              const SizedBox(height: 14),
-              _ModeCard(
-                color: const Color(0xFF3B82F6),
-                icon: Icons.checklist_rounded,
-                title: 'Tasks & breaks',
-                description: 'Add tasks with custom focus time and breaks.',
-                badge: pendingTasks > 0
-                    ? '$pendingTasks task${pendingTasks == 1 ? '' : 's'}'
-                    : null,
-                onTap: () => context.go('/tasks'),
-              ),
-              const SizedBox(height: 14),
-              _ModeCard(
-                color: const Color(0xFFA855F7),
-                icon: Icons.folder_open_rounded,
-                title: 'Groups & tasks',
-                description: 'Organise your work into groups like Work or Personal.',
-                badge: groups.isNotEmpty
-                    ? '${groups.length} group${groups.length == 1 ? '' : 's'}'
-                    : null,
-                onTap: () => context.go('/groups'),
-              ),
+              if (features.timer) ...[
+                _ModeCard(
+                  color: const Color(0xFFE05A2B),
+                  icon: Icons.timer_outlined,
+                  title: 'Quick timer',
+                  description: 'Set a duration and start focusing — no setup needed.',
+                  badge: null,
+                  onTap: () => context.go('/timer'),
+                ),
+                const SizedBox(height: 14),
+              ],
+              if (features.tasks) ...[
+                _ModeCard(
+                  color: const Color(0xFF3B82F6),
+                  icon: Icons.checklist_rounded,
+                  title: 'Tasks & breaks',
+                  description: 'Add tasks with custom focus time and breaks.',
+                  badge: pendingTasks > 0
+                      ? '$pendingTasks task${pendingTasks == 1 ? '' : 's'}'
+                      : null,
+                  onTap: () => context.go('/tasks'),
+                ),
+                const SizedBox(height: 14),
+              ],
+              if (features.groups)
+                _ModeCard(
+                  color: const Color(0xFFA855F7),
+                  icon: Icons.folder_open_rounded,
+                  title: 'Groups & tasks',
+                  description: 'Organise your work into groups like Work or Personal.',
+                  badge: groups.isNotEmpty
+                      ? '${groups.length} group${groups.length == 1 ? '' : 's'}'
+                      : null,
+                  onTap: () => context.go('/groups'),
+                ),
             ],
           ),
         ),
