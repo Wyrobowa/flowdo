@@ -175,14 +175,12 @@ class _GroupPicker extends StatelessWidget {
       children: [
         _GroupChip(
           label: 'None',
-          color: cs.onSurface.withValues(alpha: 0.25),
           isSelected: selectedId == null,
           onTap: () => onSelected(null),
         ),
         for (final g in groups)
           _GroupChip(
             label: g.name,
-            color: g.color,
             isSelected: selectedId == g.id,
             onTap: () => onSelected(g.id),
           ),
@@ -194,46 +192,33 @@ class _GroupPicker extends StatelessWidget {
 class _GroupChip extends StatelessWidget {
   const _GroupChip({
     required this.label,
-    required this.color,
     required this.isSelected,
     required this.onTap,
   });
 
   final String label;
-  final Color color;
   final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.15) : context.chipSurface,
+          color: isSelected ? cs.primary : context.chipSurface,
           borderRadius: BorderRadius.circular(10),
-          border: isSelected ? Border.all(color: color, width: 1.5) : null,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? color : Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ],
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? cs.onPrimary : cs.onSurface,
+          ),
         ),
       ),
     );
