@@ -19,7 +19,10 @@ class SessionScreen extends ConsumerWidget {
     }
 
     if (session.phase == SessionPhase.done) {
-      return _DoneScreen(taskCount: session.tasks.length);
+      return _DoneScreen(
+        cycleCount: session.totalCycles,
+        tasksPerCycle: session.tasksPerCycle,
+      );
     }
 
     return _ActiveSession(session: session, ref: ref);
@@ -62,8 +65,10 @@ class _ActiveSession extends StatelessWidget {
           children: [
             const SizedBox(height: 12),
             _TaskProgress(
-              current: session.currentIndex + 1,
-              total: session.tasks.length,
+              currentInCycle: session.indexInCycle + 1,
+              tasksPerCycle: session.tasksPerCycle,
+              currentCycle: session.currentCycle,
+              totalCycles: session.totalCycles,
               color: phaseColor,
             ),
             Expanded(
@@ -104,38 +109,57 @@ class _ActiveSession extends StatelessWidget {
 
 class _TaskProgress extends StatelessWidget {
   const _TaskProgress({
-    required this.current,
-    required this.total,
+    required this.currentInCycle,
+    required this.tasksPerCycle,
+    required this.currentCycle,
+    required this.totalCycles,
     required this.color,
   });
 
-  final int current;
-  final int total;
+  final int currentInCycle;
+  final int tasksPerCycle;
+  final int currentCycle;
+  final int totalCycles;
   final Color color;
 
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(total, (i) {
-            final active = i == current - 1;
-            final done = i < current - 1;
-            return Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                height: 4,
-                decoration: BoxDecoration(
-                  color: done
-                      ? color
-                      : active
-                          ? color.withValues(alpha: 0.5)
-                          : context.trackSurface,
-                  borderRadius: BorderRadius.circular(2),
+        child: Column(
+          children: [
+            if (totalCycles > 1) ...[
+              Text(
+                'Round $currentCycle of $totalCycles',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color,
                 ),
               ),
-            );
-          }),
+              const SizedBox(height: 8),
+            ],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(tasksPerCycle, (i) {
+                final active = i == currentInCycle - 1;
+                final done = i < currentInCycle - 1;
+                return Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: done
+                          ? color
+                          : active
+                              ? color.withValues(alpha: 0.5)
+                              : context.trackSurface,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
         ),
       );
 }
@@ -340,9 +364,20 @@ class _ControlButton extends StatelessWidget {
 }
 
 class _DoneScreen extends StatelessWidget {
-  const _DoneScreen({required this.taskCount});
+  const _DoneScreen({required this.cycleCount, required this.tasksPerCycle});
 
-  final int taskCount;
+  final int cycleCount;
+  final int tasksPerCycle;
+
+  String get _subtitle {
+    if (cycleCount > 1 && tasksPerCycle == 1) {
+      return '$cycleCount rounds complete.\nGreat work!';
+    }
+    if (cycleCount > 1) {
+      return '$cycleCount rounds, $tasksPerCycle tasks each.\nGreat work!';
+    }
+    return 'You finished $tasksPerCycle task${tasksPerCycle == 1 ? '' : 's'}.\nGreat work!';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -371,7 +406,7 @@ class _DoneScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'You finished $taskCount task${taskCount == 1 ? '' : 's'}.\nGreat work!',
+                  _subtitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,

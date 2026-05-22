@@ -62,13 +62,7 @@ class HomeScreen extends ConsumerWidget {
       ),
       bottomSheet: pending.isEmpty
           ? null
-          : _StartSessionBar(
-              pendingCount: pending.length,
-              onStart: () {
-                ref.read(sessionProvider.notifier).start(pending);
-                context.go('/session');
-              },
-            ),
+          : _StartSessionBar(pendingCount: pending.length),
     );
   }
 
@@ -275,11 +269,18 @@ class _ProgressHeader extends StatelessWidget {
   }
 }
 
-class _StartSessionBar extends StatelessWidget {
-  const _StartSessionBar({required this.pendingCount, required this.onStart});
+class _StartSessionBar extends ConsumerStatefulWidget {
+  const _StartSessionBar({required this.pendingCount});
 
   final int pendingCount;
-  final VoidCallback onStart;
+
+  @override
+  ConsumerState<_StartSessionBar> createState() => _StartSessionBarState();
+}
+
+class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
+  int _cycles = 1;
+  static const _cycleOptions = [1, 2, 3, 4, 5];
 
   @override
   Widget build(BuildContext context) {
@@ -292,13 +293,67 @@ class _StartSessionBar extends StatelessWidget {
         20,
         MediaQuery.of(context).padding.bottom + 12,
       ),
-      child: FilledButton.icon(
-        onPressed: onStart,
-        icon: const Icon(Icons.play_arrow_rounded),
-        label: Text(
-          'Start session · $pendingCount task${pendingCount == 1 ? '' : 's'}',
-        ),
-        style: FilledButton.styleFrom(backgroundColor: cs.primary),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Repeat',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ..._cycleOptions.map((v) {
+                final sel = v == _cycles;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _cycles = v),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: sel ? cs.primary : context.chipSurface,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${v}×',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: sel ? Colors.white : cs.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: () {
+              final pending = ref.read(pendingTasksProvider);
+              final tasks = _cycles > 1
+                  ? [for (var i = 0; i < _cycles; i++) ...pending]
+                  : pending;
+              ref.read(sessionProvider.notifier).start(
+                tasks,
+                cycleSize: _cycles > 1 ? pending.length : 0,
+              );
+              context.go('/session');
+            },
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: Text(
+              'Start session · ${widget.pendingCount} task${widget.pendingCount == 1 ? '' : 's'}',
+            ),
+            style: FilledButton.styleFrom(backgroundColor: cs.primary),
+          ),
+        ],
       ),
     );
   }

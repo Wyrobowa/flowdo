@@ -16,9 +16,11 @@ class TimerScreen extends ConsumerStatefulWidget {
 class _TimerScreenState extends ConsumerState<TimerScreen> {
   late int _focusMinutes;
   late int _breakMinutes;
+  int _cycles = 1;
 
   static const _focusOptions = [5, 10, 15, 20, 25, 30, 45, 60, 90];
   static const _breakOptions = [0, 5, 10, 15, 20];
+  static const _cycleOptions = [1, 2, 3, 4, 5, 6, 8];
 
   @override
   void initState() {
@@ -33,7 +35,11 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
       focusMinutes: _focusMinutes,
       breakMinutes: _breakMinutes,
     );
-    ref.read(sessionProvider.notifier).start([task]);
+    final tasks = List.generate(_cycles, (_) => task);
+    ref.read(sessionProvider.notifier).start(
+      tasks,
+      cycleSize: _cycles > 1 ? 1 : 0,
+    );
     context.go('/session');
   }
 
@@ -74,8 +80,18 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                 activeColor: cs.secondary,
                 onSelected: (v) => setState(() => _breakMinutes = v),
               ),
+              const SizedBox(height: 32),
+              _Label('Repeat'),
+              const SizedBox(height: 12),
+              _ChipRow(
+                options: _cycleOptions,
+                selected: _cycles,
+                label: (v) => '${v}×',
+                activeColor: const Color(0xFF22C55E),
+                onSelected: (v) => setState(() => _cycles = v),
+              ),
               const Spacer(),
-              _Preview(focusMinutes: _focusMinutes, breakMinutes: _breakMinutes),
+              _Preview(focusMinutes: _focusMinutes, breakMinutes: _breakMinutes, cycles: _cycles),
               const SizedBox(height: 28),
               FilledButton.icon(
                 onPressed: _start,
@@ -153,10 +169,11 @@ class _ChipRow extends StatelessWidget {
 }
 
 class _Preview extends StatelessWidget {
-  const _Preview({required this.focusMinutes, required this.breakMinutes});
+  const _Preview({required this.focusMinutes, required this.breakMinutes, required this.cycles});
 
   final int focusMinutes;
   final int breakMinutes;
+  final int cycles;
 
   @override
   Widget build(BuildContext context) {
@@ -189,6 +206,21 @@ class _Preview extends StatelessWidget {
               icon: Icons.coffee_outlined,
               label: '${breakMinutes}m break',
               color: cs.secondary,
+            ),
+          ],
+          if (cycles > 1) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                size: 14,
+                color: cs.onSurface.withValues(alpha: 0.3),
+              ),
+            ),
+            _PreviewPill(
+              icon: Icons.repeat_rounded,
+              label: '×$cycles',
+              color: const Color(0xFF22C55E),
             ),
           ],
         ],
