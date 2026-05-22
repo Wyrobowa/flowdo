@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
 import '../providers/defaults_provider.dart';
+import '../providers/notifications_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/notification_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -13,6 +15,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final defaultFocus = ref.watch(defaultFocusProvider);
     final defaultBreak = ref.watch(defaultBreakProvider);
+    final notifEnabled = ref.watch(notificationsEnabledProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -85,6 +88,30 @@ class SettingsScreen extends ConsumerWidget {
                       ref.read(defaultBreakProvider.notifier).set(v),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 28),
+          _SectionLabel('Notifications'),
+          _Card(
+            child: _ToggleRow(
+              label: 'Enable notifications',
+              description: 'Get alerted when focus or break time ends.',
+              value: notifEnabled,
+              onChanged: (val) async {
+                if (val) {
+                  final granted = await NotificationService.requestPermission();
+                  if (!granted && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Notifications are blocked — enable them in System Settings.',
+                        ),
+                      ),
+                    );
+                  }
+                }
+                ref.read(notificationsEnabledProvider.notifier).set(val);
+              },
             ),
           ),
           const SizedBox(height: 28),
@@ -198,6 +225,57 @@ class _Divider extends StatelessWidget {
         height: 20,
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
       );
+}
+
+class _ToggleRow extends StatelessWidget {
+  const _ToggleRow({
+    required this.label,
+    required this.description,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String description;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: cs.onSurface.withValues(alpha: 0.5),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
 }
 
 class _ChipRow extends StatelessWidget {

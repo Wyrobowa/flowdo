@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task.dart';
+import '../providers/notifications_provider.dart';
 import '../services/notification_service.dart';
 
 enum SessionPhase { focus, breakTime, done }
@@ -50,8 +51,9 @@ class SessionState {
 }
 
 class SessionNotifier extends StateNotifier<SessionState?> {
-  SessionNotifier() : super(null);
+  SessionNotifier(this._ref) : super(null);
 
+  final Ref _ref;
   Timer? _timer;
 
   void start(List<Task> tasks) {
@@ -108,7 +110,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
   void _advance(SessionState s) {
     if (s.phase == SessionPhase.focus) {
       final breakSecs = (s.currentTask?.breakMinutes ?? 0) * 60;
-      NotificationService.show(
+      _notify(
         '${s.currentTask?.title ?? "Task"} done!',
         breakSecs > 0 ? 'Time for a break.' : 'Moving to next task.',
       );
@@ -123,7 +125,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         _nextTask(s);
       }
     } else {
-      NotificationService.show('Break over!', 'Back to work!');
+      _notify('Break over!', 'Back to work!');
       _nextTask(s);
     }
   }
@@ -136,7 +138,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         secondsRemaining: 0,
         isRunning: false,
       );
-      NotificationService.show(
+      _notify(
         'Session complete!',
         'All ${s.tasks.length} tasks done. Great work!',
       );
@@ -152,6 +154,12 @@ class SessionNotifier extends StateNotifier<SessionState?> {
     }
   }
 
+  void _notify(String title, String body) {
+    if (_ref.read(notificationsEnabledProvider)) {
+      NotificationService.show(title, body);
+    }
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -161,5 +169,5 @@ class SessionNotifier extends StateNotifier<SessionState?> {
 
 final sessionProvider =
     StateNotifierProvider<SessionNotifier, SessionState?>(
-  (ref) => SessionNotifier(),
+  (ref) => SessionNotifier(ref),
 );

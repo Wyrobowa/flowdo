@@ -8,13 +8,35 @@ class NotificationService {
     if (kIsWeb) return;
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const darwin = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
     await _plugin.initialize(
       const InitializationSettings(android: android, iOS: darwin, macOS: darwin),
     );
+  }
+
+  /// Requests system notification permission. Returns true if granted.
+  static Future<bool> requestPermission() async {
+    if (kIsWeb) return false;
+    bool granted = false;
+    final macOS = _plugin.resolvePlatformSpecificImplementation<
+        MacOSFlutterLocalNotificationsPlugin>();
+    if (macOS != null) {
+      granted = await macOS.requestPermissions(
+            alert: true, badge: true, sound: true) ??
+          false;
+    }
+    final iOS = _plugin.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>();
+    if (iOS != null) {
+      granted = await iOS.requestPermissions(
+            alert: true, badge: true, sound: true) ??
+          false;
+    }
+    if (macOS == null && iOS == null) granted = true; // Android handled at OS level
+    return granted;
   }
 
   static Future<void> show(String title, String body) async {
