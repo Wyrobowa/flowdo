@@ -28,6 +28,7 @@ class TaskCard extends ConsumerWidget {
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       onDismissed: (_) {
+        HapticFeedback.mediumImpact();
         ref.read(tasksProvider.notifier).remove(task.id);
       },
       child: Card(

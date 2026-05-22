@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
@@ -330,7 +331,12 @@ class _ToggleRow extends StatelessWidget {
         const SizedBox(width: 12),
         Switch(
           value: value,
-          onChanged: enabled ? onChanged : null,
+          onChanged: enabled
+              ? (v) {
+                  HapticFeedback.selectionClick();
+                  onChanged(v);
+                }
+              : null,
         ),
       ],
     );
