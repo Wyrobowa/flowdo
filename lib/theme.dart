@@ -26,7 +26,7 @@ ThemeData get appTheme => ThemeData(
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: const Color(0xFFF6DCAC),
+        color: const Color(0xFFFAE9C8),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -37,7 +37,7 @@ ThemeData get appTheme => ThemeData(
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFEEC87A),
+        fillColor: const Color(0xFFF4DBA8),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
