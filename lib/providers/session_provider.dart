@@ -184,7 +184,7 @@ class SessionNotifier extends StateNotifier<SessionState?> {
         isRunning: false,
       );
       _notify('Session complete!', 'All done. Great work!');
-      _ref.read(statsProvider.notifier).recordSession();
+      _ref.read(statsProvider.notifier).recordSession(s);
     } else {
       final next = s.tasks[nextIndex];
       state = s.copyWith(

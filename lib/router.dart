@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'screens/history_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/mode_select_screen.dart';
 import 'screens/session_screen.dart';
@@ -31,5 +32,6 @@ final router = GoRouter(
     GoRoute(path: '/timer', pageBuilder: (_, s) => _slide(s, const TimerScreen())),
     GoRoute(path: '/tasks', pageBuilder: (_, s) => _slide(s, const HomeScreen())),
     GoRoute(path: '/session', pageBuilder: (_, s) => _slide(s, const SessionScreen())),
+    GoRoute(path: '/history', pageBuilder: (_, s) => _slide(s, const HistoryScreen())),
   ],
 );

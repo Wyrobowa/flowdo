@@ -177,6 +177,11 @@ class SettingsScreen extends ConsumerWidget {
           _Card(
             child: Column(
               children: [
+                _NavRow(
+                  label: 'Session history',
+                  onTap: () => context.go('/history'),
+                ),
+                _Divider(),
                 _InfoRow(label: 'App', value: 'Flowdo'),
                 _Divider(),
                 _InfoRow(label: 'Version', value: '1.0.0'),
@@ -339,6 +344,42 @@ class _ToggleRow extends StatelessWidget {
               : null,
         ),
       ],
+    );
+  }
+}
+
+class _NavRow extends StatelessWidget {
+  const _NavRow({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface,
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: cs.onSurface.withValues(alpha: 0.4),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
