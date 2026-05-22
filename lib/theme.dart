@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-const _seed = Color(0xFF4F62D9); // calm indigo
+const _seed = Color(0xFFD97706); // amber
 
 ThemeData get appTheme => ThemeData(
       useMaterial3: true,
