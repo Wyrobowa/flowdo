@@ -16,6 +16,7 @@ class AddTaskSheet extends ConsumerStatefulWidget {
 
 class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   late final TextEditingController _titleCtrl;
+  late final TextEditingController _notesCtrl;
   late Duration _focusDuration;
   late Duration _breakDuration;
 
@@ -24,6 +25,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
     super.initState();
     final t = widget.task;
     _titleCtrl = TextEditingController(text: t?.title ?? '');
+    _notesCtrl = TextEditingController(text: t?.notes ?? '');
     _titleCtrl.addListener(() => setState(() {}));
     if (t != null) {
       _focusDuration = Duration(seconds: t.focusSeconds);
@@ -37,6 +39,7 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
   @override
   void dispose() {
     _titleCtrl.dispose();
+    _notesCtrl.dispose();
     super.dispose();
   }
 
@@ -46,18 +49,21 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
     if (title.isEmpty) return;
     final focusSecs = _focusDuration.inSeconds.clamp(1, 86399);
     final breakSecs = _breakDuration.inSeconds.clamp(0, 86399);
+    final notes = _notesCtrl.text.trim();
     final notifier = ref.read(tasksProvider.notifier);
     if (widget.task == null) {
       notifier.add(Task(
         title: title,
         focusSeconds: focusSecs,
         breakSeconds: breakSecs,
+        notes: notes,
       ));
     } else {
       notifier.update(widget.task!.copyWith(
         title: title,
         focusSeconds: focusSecs,
         breakSeconds: breakSecs,
+        notes: notes,
       ));
     }
     Navigator.of(context).pop();
@@ -109,6 +115,14 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(hintText: 'What do you want to work on?'),
                 onSubmitted: (_) => _save(),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _notesCtrl,
+                autofocus: false,
+                textCapitalization: TextCapitalization.sentences,
+                maxLines: 3,
+                decoration: const InputDecoration(hintText: 'Add a note (optional)'),
               ),
               const SizedBox(height: 24),
               _SectionLabel(label: 'Focus time'),

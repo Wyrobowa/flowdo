@@ -118,6 +118,16 @@ class TaskCard extends ConsumerWidget {
                           ],
                         ],
                       ),
+                      if (task.notes.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          task.notes,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
