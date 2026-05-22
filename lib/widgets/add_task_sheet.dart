@@ -67,10 +67,14 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
     final cs = Theme.of(context).colorScheme;
     final isValid = _titleCtrl.text.trim().isNotEmpty;
 
-    return Padding(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const _SheetHandle(),
+        Padding(
       padding: EdgeInsets.fromLTRB(
         24,
-        24,
+        12,
         24,
         MediaQuery.of(context).viewInsets.bottom + 24,
       ),
@@ -131,8 +135,29 @@ class _AddTaskSheetState extends ConsumerState<AddTaskSheet> {
           ),
         ],
       ),
+        ),
+      ],
     );
   }
+}
+
+class _SheetHandle extends StatelessWidget {
+  const _SheetHandle();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 12, bottom: 4),
+        child: Center(
+          child: Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+      );
 }
 
 class _SectionLabel extends StatelessWidget {

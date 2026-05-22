@@ -38,7 +38,9 @@ class TaskCard extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOut,
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
@@ -47,26 +49,37 @@ class TaskCard extends ConsumerWidget {
                         : context.chipSurface,
                     shape: BoxShape.circle,
                   ),
-                  child: task.isDone
-                      ? Icon(Icons.check, size: 16, color: cs.primary)
-                      : Center(
-                          child: Text(
-                            '${index + 1}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: cs.onSurface.withValues(alpha: 0.4),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, anim) => ScaleTransition(
+                      scale: anim,
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
+                    child: task.isDone
+                        ? Icon(Icons.check, key: const ValueKey('done'), size: 16, color: cs.primary)
+                        : Center(
+                            key: ValueKey(index),
+                            child: Text(
+                              '${index + 1}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: cs.onSurface.withValues(alpha: 0.4),
+                              ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        task.title,
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -75,8 +88,10 @@ class TaskCard extends ConsumerWidget {
                               : cs.onSurface,
                           decoration: task.isDone
                               ? TextDecoration.lineThrough
-                              : null,
+                              : TextDecoration.none,
+                          decorationColor: cs.onSurface.withValues(alpha: 0.4),
                         ),
+                        child: Text(task.title),
                       ),
                       const SizedBox(height: 4),
                       Row(

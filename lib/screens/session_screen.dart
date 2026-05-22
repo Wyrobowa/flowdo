@@ -77,25 +77,46 @@ class _ActiveSession extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (!isBreak && task != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
-                        task.title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          height: 1.3,
-                        ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, anim) => FadeTransition(
+                      opacity: anim,
+                      child: SlideTransition(
+                        position: Tween(
+                          begin: const Offset(0, 0.08),
+                          end: Offset.zero,
+                        ).animate(anim),
+                        child: child,
                       ),
                     ),
-                    const SizedBox(height: 48),
-                  ],
+                    child: !isBreak && task != null
+                        ? Padding(
+                            key: ValueKey(task.id),
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Column(
+                              children: [
+                                Text(
+                                  task.title,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 48),
+                              ],
+                            ),
+                          )
+                        : const SizedBox(key: ValueKey('break'), height: 0),
+                  ),
                   _CircularTimer(
                     progress: session.progress,
                     secondsRemaining: session.secondsRemaining,
                     color: phaseColor,
+                    isRunning: session.isRunning,
                   ),
                 ],
               ),
@@ -166,45 +187,105 @@ class _TaskProgress extends StatelessWidget {
       );
 }
 
-class _CircularTimer extends StatelessWidget {
+class _CircularTimer extends StatefulWidget {
   const _CircularTimer({
     required this.progress,
     required this.secondsRemaining,
     required this.color,
+    required this.isRunning,
   });
 
   final double progress;
   final int secondsRemaining;
   final Color color;
+  final bool isRunning;
+
+  @override
+  State<_CircularTimer> createState() => _CircularTimerState();
+}
+
+class _CircularTimerState extends State<_CircularTimer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+  late final Animation<double> _pulseAlpha;
+  late final Animation<double> _pulseScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+    _pulseAlpha = Tween<double>(begin: 0.08, end: 0.22)
+        .animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
+    _pulseScale = Tween<double>(begin: 1.0, end: 1.06)
+        .animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   String get _timeLabel {
-    final m = secondsRemaining ~/ 60;
-    final s = secondsRemaining % 60;
+    final m = widget.secondsRemaining ~/ 60;
+    final s = widget.secondsRemaining % 60;
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 240,
-      height: 240,
-      child: CustomPaint(
-        painter: _TimerPainter(
-          progress: progress,
-          trackColor: context.trackSurface,
-          arcColor: color,
-        ),
-        child: Center(
-          child: Text(
-            _timeLabel,
-            style: const TextStyle(
-              fontSize: 52,
-              fontWeight: FontWeight.w300,
-              letterSpacing: -2,
-            ),
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (_, __) {
+        return SizedBox(
+          width: 280,
+          height: 280,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (widget.isRunning)
+                Transform.scale(
+                  scale: _pulseScale.value,
+                  child: Container(
+                    width: 260,
+                    height: 260,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: widget.color.withValues(alpha: _pulseAlpha.value),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              SizedBox(
+                width: 240,
+                height: 240,
+                child: CustomPaint(
+                  painter: _TimerPainter(
+                    progress: widget.progress,
+                    trackColor: context.trackSurface,
+                    arcColor: widget.color,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _timeLabel,
+                      style: const TextStyle(
+                        fontSize: 52,
+                        fontWeight: FontWeight.w300,
+                        letterSpacing: -2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -366,7 +447,7 @@ class _ControlButton extends StatelessWidget {
   }
 }
 
-class _DoneScreen extends StatelessWidget {
+class _DoneScreen extends StatefulWidget {
   const _DoneScreen({
     required this.cycleCount,
     required this.tasksPerCycle,
@@ -377,14 +458,44 @@ class _DoneScreen extends StatelessWidget {
   final int tasksPerCycle;
   final String origin;
 
+  @override
+  State<_DoneScreen> createState() => _DoneScreenState();
+}
+
+class _DoneScreenState extends State<_DoneScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _enter;
+  late final Animation<double> _scale;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _enter = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..forward();
+    _scale = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _enter, curve: Curves.elasticOut),
+    );
+    _fade = CurveTween(curve: const Interval(0.0, 0.5, curve: Curves.easeOut))
+        .animate(_enter);
+  }
+
+  @override
+  void dispose() {
+    _enter.dispose();
+    super.dispose();
+  }
+
   String get _subtitle {
-    if (cycleCount > 1 && tasksPerCycle == 1) {
-      return '$cycleCount rounds complete.\nGreat work!';
+    if (widget.cycleCount > 1 && widget.tasksPerCycle == 1) {
+      return '${widget.cycleCount} rounds complete.\nGreat work!';
     }
-    if (cycleCount > 1) {
-      return '$cycleCount rounds, $tasksPerCycle tasks each.\nGreat work!';
+    if (widget.cycleCount > 1) {
+      return '${widget.cycleCount} rounds, ${widget.tasksPerCycle} tasks each.\nGreat work!';
     }
-    return 'You finished $tasksPerCycle task${tasksPerCycle == 1 ? '' : 's'}.\nGreat work!';
+    return 'You finished ${widget.tasksPerCycle} task${widget.tasksPerCycle == 1 ? '' : 's'}.\nGreat work!';
   }
 
   @override
@@ -398,14 +509,20 @@ class _DoneScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+                ScaleTransition(
+                  scale: _scale,
+                  child: FadeTransition(
+                    opacity: _fade,
+                    child: Container(
+                      width: 96,
+                      height: 96,
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.check_rounded, size: 48, color: cs.primary),
+                    ),
                   ),
-                  child: Icon(Icons.check_rounded, size: 48, color: cs.primary),
                 ),
                 const SizedBox(height: 28),
                 const Text(
@@ -428,7 +545,7 @@ class _DoneScreen extends StatelessWidget {
                     onPressed: () {
                       ref.read(tasksProvider.notifier).resetDone();
                       ref.read(sessionProvider.notifier).stop();
-                      context.go(origin);
+                      context.go(widget.origin);
                     },
                     icon: const Icon(Icons.home_rounded),
                     label: const Text('Back to home'),
