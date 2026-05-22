@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#FFF8ED"/>
+
+  <!-- Outer arc: 270° sweep, gap at bottom-right, rounded caps -->
+  <circle cx="512" cy="512" r="310" fill="none" stroke="#D97706" stroke-width="88"
+          stroke-linecap="round"
+          stroke-dasharray="1946 648"
+          stroke-dashoffset="162"
+          transform="rotate(-225 512 512)"/>
+
+  <!-- Trailing dot at the open tail of the arc -->
+  <circle cx="732" cy="732" r="44" fill="#D97706"/>
+
+  <!-- Inner filled circle — focus point -->
+  <circle cx="512" cy="512" r="110" fill="#D97706"/>
+  <circle cx="512" cy="512" r="56" fill="#FFF8ED"/>
+</svg>
