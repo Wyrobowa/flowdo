@@ -22,6 +22,7 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => context.go('/'),
         ),
         title: const Text('Tasks & breaks'),
@@ -58,6 +59,7 @@ class HomeScreen extends ConsumerWidget {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openAddTask(context),
+        tooltip: 'Add task',
         child: const Icon(Icons.add),
       ),
       bottomSheet: pending.isEmpty
@@ -167,15 +169,26 @@ class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
               const SizedBox(width: 12),
               ..._cycleOptions.map((v) {
                 final sel = v == _cycles;
+                void select() {
+                  HapticFeedback.selectionClick();
+                  setState(() => _cycles = v);
+                }
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
-                  child: GestureDetector(
-                    onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _cycles = v);
-                      },
+                  child: Semantics(
+                    button: true,
+                    inMutuallyExclusiveGroup: true,
+                    selected: sel,
+                    label: 'Repeat $v times',
+                    onTap: select,
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                    onTap: select,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
+                      constraints: const BoxConstraints(minHeight: 48),
+                      alignment: Alignment.center,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: sel ? cs.primary : context.chipSurface,
@@ -189,6 +202,7 @@ class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
                           color: sel ? cs.onPrimary : cs.onSurface,
                         ),
                       ),
+                    ),
                     ),
                   ),
                 );

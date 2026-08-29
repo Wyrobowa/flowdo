@@ -1,8 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,25 +12,7 @@ import 'package:flowdo/providers/sounds_provider.dart';
 import 'package:flowdo/providers/stats_provider.dart';
 import 'package:flowdo/services/notification_service.dart';
 
-const _notificationChannel =
-    MethodChannel('dexterous.com/flutter/local_notifications');
-
-/// Method names the engine sent to the notification plugin, in order.
-final List<String> _notificationCalls = [];
-
-Future<Object?> _stubNotifications(MethodCall call) async {
-  _notificationCalls.add(call.method);
-  switch (call.method) {
-    // These are the calls whose return value the plugin actually reads.
-    case 'initialize':
-    case 'canScheduleExactNotifications':
-    case 'requestNotificationsPermission':
-    case 'requestExactAlarmsPermission':
-      return true;
-    default:
-      return null;
-  }
-}
+import 'support/notification_stub.dart';
 
 Task _task({String title = 'Task', int focus = 60, int brk = 30}) =>
     Task(title: title, focusSeconds: focus, breakSeconds: brk);
@@ -88,14 +68,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
-    // The engine talks to NotificationService directly, and the plugin's
-    // platform instance is otherwise never registered in a test binding.
-    // Registering the Android implementation and stubbing its channel makes
-    // every notification call a no-op the engine can run through.
-    AndroidFlutterLocalNotificationsPlugin.registerWith();
-    _notificationCalls.clear();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(_notificationChannel, _stubNotifications);
+    stubNotificationPlugin();
     SharedPreferences.setMockInitialValues({
       'sounds_enabled': false,
       'notifications_enabled': false,
@@ -104,10 +77,7 @@ void main() {
     await NotificationService.init();
   });
 
-  tearDown(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(_notificationChannel, null);
-  });
+  tearDown(clearNotificationStub);
 
   group('start', () {
     test('opens on the first task in its focus phase', () async {
@@ -323,12 +293,12 @@ void main() {
   group('notification side effects', () {
     test('starting a session schedules its phase end', () async {
       final container = await _warmContainer();
-      _notificationCalls.clear();
+      notificationCalls.clear();
 
       container.read(sessionProvider.notifier).start([_task(focus: 300)]);
       await pumpEventQueue();
 
-      expect(_notificationCalls, contains('zonedSchedule'));
+      expect(notificationCalls, contains('zonedSchedule'));
       container.dispose();
     });
 
@@ -337,12 +307,12 @@ void main() {
       final notifier = container.read(sessionProvider.notifier);
       notifier.start([_task(focus: 300)]);
       await pumpEventQueue();
-      _notificationCalls.clear();
+      notificationCalls.clear();
 
       notifier.togglePause();
       await pumpEventQueue();
 
-      expect(_notificationCalls, contains('cancel'));
+      expect(notificationCalls, contains('cancel'));
       container.dispose();
     });
 
@@ -351,12 +321,12 @@ void main() {
       final notifier = container.read(sessionProvider.notifier);
       notifier.start([_task(focus: 300)]);
       await pumpEventQueue();
-      _notificationCalls.clear();
+      notificationCalls.clear();
 
       notifier.stop();
       await pumpEventQueue();
 
-      expect(_notificationCalls, contains('cancelAll'));
+      expect(notificationCalls, contains('cancelAll'));
       container.dispose();
     });
 
@@ -369,12 +339,12 @@ void main() {
       final notifier = container.read(sessionProvider.notifier);
       notifier.start([_task(focus: 60, brk: 0)]);
       await pumpEventQueue();
-      _notificationCalls.clear();
+      notificationCalls.clear();
 
       notifier.skip(); // completes the session
       await pumpEventQueue();
 
-      expect(_notificationCalls, contains('show'));
+      expect(notificationCalls, contains('show'));
       container.dispose();
     });
 
@@ -383,13 +353,13 @@ void main() {
       final notifier = container.read(sessionProvider.notifier);
       notifier.start([_task(focus: 60, brk: 0)]);
       await pumpEventQueue();
-      _notificationCalls.clear();
+      notificationCalls.clear();
 
       notifier.skip(); // completes the session
       await pumpEventQueue();
 
       expect(container.read(sessionProvider)!.phase, SessionPhase.done);
-      expect(_notificationCalls, isNot(contains('show')));
+      expect(notificationCalls, isNot(contains('show')));
       container.dispose();
     });
   });

@@ -93,14 +93,22 @@ Other keys: `feature_timer`, `feature_tasks`, `theme_mode`, `default_focus_s`,
 `SessionNotifier` calls the static `NotificationService` directly, and
 `flutter_local_notifications` never registers a platform instance under a test
 binding — so any call throws `LateInitializationError` out of the box.
-`test/session_provider_test.dart` works around this by registering the Android
-implementation and stubbing its method channel, which both neutralises the calls
-and gives the tests a log of what the engine tried to send.
+`test/support/notification_stub.dart` works around this by registering the
+Android implementation and stubbing its method channel, which both neutralises
+the calls and gives the tests a log of what the engine tried to send. Call
+`stubNotificationPlugin()` from any test that touches the session engine or the
+Settings screen.
 
 Two traps if you extend those tests: `pumpEventQueue()` deadlocks inside
 `testWidgets` while a periodic timer is pending, and the post-frame restore
 callback has to be fired while its notifier is still alive or a later test will
 fire it against a disposed one.
+
+`test/accessibility_test.dart` runs Flutter's built-in
+`androidTapTargetGuideline`, `iOSTapTargetGuideline` and
+`labeledTapTargetGuideline` against each main screen. Add new screens to that
+group — the guidelines catch unlabelled icon buttons and undersized tap targets,
+which are otherwise invisible until someone tries the app with a screen reader.
 
 The one-second tick itself is not covered — it reads `DateTime.now()`, which
 `fakeAsync` does not control, so testing it would mean real sleeps. Injecting a

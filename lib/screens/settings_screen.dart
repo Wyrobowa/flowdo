@@ -28,6 +28,7 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => context.go('/'),
         ),
         title: const Text('Settings'),
@@ -314,7 +315,8 @@ class _ToggleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Row(
+    return MergeSemantics(
+      child: Row(
       children: [
         Expanded(
           child: Column(
@@ -350,6 +352,7 @@ class _ToggleRow extends StatelessWidget {
               : null,
         ),
       ],
+      ),
     );
   }
 }

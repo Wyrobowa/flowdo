@@ -12,6 +12,7 @@ class PrivacyScreen extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => context.go('/settings'),
         ),
         title: const Text('Privacy policy'),

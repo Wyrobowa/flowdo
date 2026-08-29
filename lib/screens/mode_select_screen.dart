@@ -168,7 +168,14 @@ class _ModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Material(
+    // InkWell gives a tap action but no button role, and the badge would
+    // otherwise be read as a stray fragment.
+    return Semantics(
+      button: true,
+      label: [title, description, if (badge != null) badge].join(', '),
+      onTap: onTap,
+      excludeSemantics: true,
+      child: Material(
       color: context.cardSurface,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
@@ -238,6 +245,7 @@ class _ModeCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

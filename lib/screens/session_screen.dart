@@ -117,13 +117,29 @@ class _ActiveSession extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 14),
-                                GestureDetector(
-                                  onTap: () {
+                                Builder(builder: (context) {
+                                  void doneEarly() {
                                     HapticFeedback.lightImpact();
                                     ref.read(tasksProvider.notifier).markDone(task.id);
                                     ref.read(sessionProvider.notifier).skip();
-                                  },
-                                  child: Row(
+                                  }
+
+                                  return Semantics(
+                                  button: true,
+                                  label: 'Mark done early',
+                                  onTap: doneEarly,
+                                  excludeSemantics: true,
+                                  child: GestureDetector(
+                                  onTap: doneEarly,
+                                  // Padding lifts a 20px row up to the 48dp
+                                  // minimum tap target.
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 16,
+                                    ),
+                                    child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(Icons.check_rounded, size: 13, color: phaseColor.withValues(alpha: 0.4)),
@@ -138,8 +154,11 @@ class _ActiveSession extends ConsumerWidget {
                                       ),
                                     ],
                                   ),
-                                ),
-                                const SizedBox(height: 34),
+                                  ),
+                                  ),
+                                  );
+                                }),
+                                const SizedBox(height: 18),
                               ],
                             ),
                           )
@@ -151,6 +170,7 @@ class _ActiveSession extends ConsumerWidget {
                     color: phaseColor,
                     isRunning: session.isRunning,
                     countdownSeconds: countdownSeconds,
+                    phaseLabel: isBreak ? 'Break' : 'Focus',
                   ),
                 ],
               ),
@@ -179,8 +199,18 @@ class _TaskProgress extends StatelessWidget {
   final int totalCycles;
   final Color color;
 
+  String get _semanticLabel {
+    final task = 'Task $currentInCycle of $tasksPerCycle';
+    return totalCycles > 1
+        ? 'Round $currentCycle of $totalCycles, $task'
+        : task;
+  }
+
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) => Semantics(
+        label: _semanticLabel,
+        excludeSemantics: true,
+        child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           children: [
@@ -218,6 +248,7 @@ class _TaskProgress extends StatelessWidget {
             ),
           ],
         ),
+        ),
       );
 }
 
@@ -228,6 +259,7 @@ class _CircularTimer extends StatefulWidget {
     required this.color,
     required this.isRunning,
     required this.countdownSeconds,
+    required this.phaseLabel,
   });
 
   final double progress;
@@ -235,6 +267,7 @@ class _CircularTimer extends StatefulWidget {
   final Color color;
   final bool isRunning;
   final int countdownSeconds;
+  final String phaseLabel;
 
   @override
   State<_CircularTimer> createState() => _CircularTimerState();
@@ -271,6 +304,18 @@ class _CircularTimerState extends State<_CircularTimer>
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  String get _spokenTime {
+    final m = widget.secondsRemaining ~/ 60;
+    final s = widget.secondsRemaining % 60;
+    final parts = <String>[
+      if (m > 0) '$m minute${m == 1 ? '' : 's'}',
+      if (s > 0) '$s second${s == 1 ? '' : 's'}',
+    ];
+    if (parts.isEmpty) return 'Time up';
+    final remaining = '${parts.join(' ')} remaining';
+    return widget.isRunning ? remaining : '$remaining, paused';
+  }
+
   bool get _isCountdown =>
       widget.isRunning && widget.secondsRemaining <= widget.countdownSeconds && widget.secondsRemaining > 0;
 
@@ -278,7 +323,14 @@ class _CircularTimerState extends State<_CircularTimer>
   Widget build(BuildContext context) {
     final countdown = _isCountdown;
 
-    return AnimatedBuilder(
+    return Semantics(
+      label: '${widget.phaseLabel} timer',
+      value: _spokenTime,
+      // Announcing every tick would be unusable, so only the final seconds
+      // are live; the rest is read on focus.
+      liveRegion: countdown,
+      excludeSemantics: true,
+      child: AnimatedBuilder(
       animation: _pulse,
       builder: (_, __) {
         return SizedBox(
@@ -349,6 +401,7 @@ class _CircularTimerState extends State<_CircularTimer>
           ),
         );
       },
+      ),
     );
   }
 }
@@ -470,45 +523,56 @@ class _ControlButton extends StatelessWidget {
     final size = large ? 72.0 : 56.0;
     final iconSize = large ? 32.0 : 24.0;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onTap();
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: outlined ? Colors.transparent : effectiveColor,
-              shape: BoxShape.circle,
-              border: outlined
-                  ? Border.all(
-                      color: cs.onSurface.withValues(alpha: 0.15),
-                      width: 1.5,
-                    )
-                  : null,
+    // The circle is icon-only and the caption sits beside it as a separate
+    // node, so the whole control is presented as one labelled button.
+    void handleTap() {
+      HapticFeedback.lightImpact();
+      onTap();
+    }
+
+    return Semantics(
+      button: true,
+      label: label,
+      onTap: handleTap,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: handleTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: outlined ? Colors.transparent : effectiveColor,
+                shape: BoxShape.circle,
+                border: outlined
+                    ? Border.all(
+                        color: cs.onSurface.withValues(alpha: 0.15),
+                        width: 1.5,
+                      )
+                    : null,
+              ),
+              child: Icon(
+                icon,
+                size: iconSize,
+                color:
+                    outlined ? cs.onSurface.withValues(alpha: 0.5) : Colors.white,
+              ),
             ),
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: outlined ? cs.onSurface.withValues(alpha: 0.5) : Colors.white,
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: cs.onSurface.withValues(alpha: 0.4),
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: cs.onSurface.withValues(alpha: 0.4),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

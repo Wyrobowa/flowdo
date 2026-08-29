@@ -1,0 +1,217 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'dart:convert';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:flowdo/models/task.dart';
+import 'package:flowdo/screens/home_screen.dart';
+import 'package:flowdo/screens/mode_select_screen.dart';
+import 'package:flowdo/providers/session_provider.dart';
+import 'package:flowdo/screens/session_screen.dart';
+import 'package:flowdo/services/notification_service.dart';
+import 'package:flowdo/screens/settings_screen.dart';
+import 'package:flowdo/screens/timer_screen.dart';
+import 'package:flowdo/theme.dart';
+import 'package:flowdo/widgets/duration_picker.dart';
+import 'package:flowdo/widgets/task_card.dart';
+
+import 'support/notification_stub.dart';
+
+Widget _host(Widget child, {ThemeData? theme}) => MaterialApp(
+      theme: theme ?? appTheme,
+      home: Scaffold(body: Padding(padding: const EdgeInsets.all(16), child: child)),
+    );
+
+void main() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    // Settings reaches NotificationService while building its exact-alarm row,
+    // and starting a session schedules its phase end.
+    stubNotificationPlugin();
+    await NotificationService.init();
+  });
+
+  tearDown(clearNotificationStub);
+
+  group('DurationPicker', () {
+    testWidgets('unit tiles announce as selectable buttons', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _host(DurationPicker(initial: const Duration(minutes: 25), onChanged: (_) {})),
+      );
+
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('25 minutes')),
+        matchesSemantics(
+          label: '25 minutes',
+          hint: 'Adjust',
+          isButton: true,
+          hasTapAction: true,
+          hasSelectedState: true,
+          isSelected: false,
+        ),
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('an open tile reports itself as selected', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _host(DurationPicker(initial: const Duration(minutes: 25), onChanged: (_) {})),
+      );
+
+      await tester.tap(find.bySemanticsLabel('25 minutes'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('25 minutes')),
+        matchesSemantics(
+          label: '25 minutes',
+          hint: 'Collapse',
+          isButton: true,
+          hasTapAction: true,
+          hasSelectedState: true,
+          isSelected: true,
+        ),
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('meets the tap target and labelling guidelines', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _host(DurationPicker(initial: const Duration(minutes: 25), onChanged: (_) {})),
+      );
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
+      handle.dispose();
+    });
+
+    testWidgets('tiles survive a large text scale without clipping',
+        (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: appTheme,
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+            child: Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(16),
+                child: DurationPicker(
+                  initial: const Duration(minutes: 25),
+                  onChanged: (_) {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('screens meet the tap target and labelling guidelines', () {
+    Future<void> check(WidgetTester tester, Widget screen) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        ProviderScope(child: MaterialApp(theme: appTheme, home: screen)),
+      );
+      await tester.pumpAndSettle();
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
+      handle.dispose();
+    }
+
+    testWidgets('mode select', (tester) async {
+      await check(tester, const ModeSelectScreen());
+    });
+
+    testWidgets('quick timer', (tester) async {
+      await check(tester, const TimerScreen());
+    });
+
+    testWidgets('settings', (tester) async {
+      await check(tester, const SettingsScreen());
+    });
+
+    testWidgets('tasks, with a task list and the repeat chips showing',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'tasks_v1': jsonEncode([
+          Task(title: 'Write the report', focusSeconds: 1500, breakSeconds: 300)
+              .toJson(),
+        ]),
+      });
+      await check(tester, const HomeScreen());
+    });
+
+    testWidgets('a running session', (tester) async {
+      final handle = tester.ensureSemantics();
+      final container = ProviderContainer();
+      container.read(sessionProvider.notifier).start([
+        Task(title: 'Write the report', focusSeconds: 1500, breakSeconds: 300),
+      ]);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: SessionScreen()),
+        ),
+      );
+      await tester.pump();
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
+      // The digits would otherwise be read out character by character.
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Focus timer')).value,
+        '25 minutes remaining',
+      );
+
+      container.read(sessionProvider.notifier).togglePause();
+      await tester.pump();
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Focus timer')).value,
+        '25 minutes remaining, paused',
+      );
+
+      container.dispose();
+      handle.dispose();
+    });
+
+    testWidgets('task card', (tester) async {
+      await check(
+        tester,
+        Scaffold(
+          body: ListView(
+            children: [
+              TaskCard(
+                task: Task(
+                  title: 'Write the report',
+                  focusSeconds: 1500,
+                  breakSeconds: 300,
+                  notes: 'Second draft',
+                ),
+                index: 0,
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  });
+}

@@ -132,50 +132,66 @@ class _UnitTile extends StatelessWidget {
   final bool open;
   final VoidCallback onTap;
 
+  static const _spokenUnit = {'h': 'hours', 'm': 'minutes', 's': 'seconds'};
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      // Colour and a border are the only visual cue that a tile is open, so
+      // the state has to be carried explicitly for a screen reader.
+      selected: open,
+      label: '$value ${_spokenUnit[label] ?? label}',
+      hint: open ? 'Collapse' : 'Adjust',
+      // excludeSemantics drops the child's tap action, so re-declare it here.
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        height: 48,
-        decoration: BoxDecoration(
-          color: open ? cs.primary.withValues(alpha: 0.12) : context.chipSurface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: open ? cs.primary : Colors.transparent,
-            width: 1.5,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: open
+                ? cs.primary.withValues(alpha: 0.12)
+                : context.chipSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: open ? cs.primary : Colors.transparent,
+              width: 1.5,
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(
-              value.toString().padLeft(2, '0'),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
-                color: open || value > 0
-                    ? (open ? cs.primary : cs.onSurface)
-                    : cs.onSurface.withValues(alpha: 0.35),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value.toString().padLeft(2, '0'),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
+                  color: open || value > 0
+                      ? (open ? cs.primary : cs.onSurface)
+                      : cs.onSurface.withValues(alpha: 0.35),
+                ),
               ),
-            ),
-            const SizedBox(width: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: open
-                    ? cs.primary.withValues(alpha: 0.7)
-                    : cs.onSurface.withValues(alpha: 0.4),
+              const SizedBox(width: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: open
+                      ? cs.primary.withValues(alpha: 0.7)
+                      : cs.onSurface.withValues(alpha: 0.4),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

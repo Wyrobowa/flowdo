@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../extensions.dart';
@@ -31,20 +32,42 @@ class TaskCard extends ConsumerWidget {
         HapticFeedback.mediumImpact();
         ref.read(tasksProvider.notifier).remove(task.id);
       },
-      child: Card(
+      child: Semantics(
+        // The swipe gesture that deletes a task has no screen-reader
+        // equivalent, so offer it through the actions menu.
+        customSemanticsActions: {
+          const CustomSemanticsAction(label: 'Delete task'): () {
+            HapticFeedback.mediumImpact();
+            ref.read(tasksProvider.notifier).remove(task.id);
+          },
+        },
+        child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () => _openEdit(context),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.only(
+              left: 6,
+              right: 16,
+              top: 14,
+              bottom: 14,
+            ),
             child: Row(
               children: [
-                GestureDetector(
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    ref.read(tasksProvider.notifier).toggleDone(task.id);
-                  },
+                Semantics(
+                  button: true,
+                  checked: task.isDone,
+                  label: task.isDone ? 'Mark not done' : 'Mark done',
+                  onTap: () => _toggle(ref),
+                  excludeSemantics: true,
+                  child: GestureDetector(
+                  onTap: () => _toggle(ref),
+                  behavior: HitTestBehavior.opaque,
+                  child: SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Center(
                   child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOut,
@@ -79,8 +102,11 @@ class TaskCard extends ConsumerWidget {
                           ),
                   ),
                   ),
+                  ),
+                  ),
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 2),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,9 +160,15 @@ class TaskCard extends ConsumerWidget {
                 ),
                 ReorderableDragStartListener(
                   index: index,
-                  child: Icon(
-                    Icons.drag_handle,
-                    color: cs.onSurface.withValues(alpha: 0.25),
+                  child: Semantics(
+                    label: 'Reorder',
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.drag_handle,
+                        color: cs.onSurface.withValues(alpha: 0.25),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -144,7 +176,13 @@ class TaskCard extends ConsumerWidget {
           ),
         ),
       ),
+      ),
     );
+  }
+
+  void _toggle(WidgetRef ref) {
+    HapticFeedback.mediumImpact();
+    ref.read(tasksProvider.notifier).toggleDone(task.id);
   }
 
   void _openEdit(BuildContext context) {

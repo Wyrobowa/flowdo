@@ -55,6 +55,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => context.go('/'),
         ),
         title: const Text('Quick timer'),
@@ -86,13 +87,24 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                 runSpacing: 8,
                 children: _cycleOptions.map((v) {
                   final sel = v == _cycles;
-                  return GestureDetector(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() => _cycles = v);
-                    },
+                  void select() {
+                    HapticFeedback.selectionClick();
+                    setState(() => _cycles = v);
+                  }
+
+                  return Semantics(
+                    button: true,
+                    inMutuallyExclusiveGroup: true,
+                    selected: sel,
+                    label: 'Repeat $v times',
+                    onTap: select,
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                    onTap: select,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
+                      constraints: const BoxConstraints(minHeight: 48),
+                      alignment: Alignment.center,
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                       decoration: BoxDecoration(
                         color: sel ? cs.primary : context.chipSurface,
@@ -106,6 +118,7 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                           color: sel ? Colors.white : cs.onSurface,
                         ),
                       ),
+                    ),
                     ),
                   );
                 }).toList(),
