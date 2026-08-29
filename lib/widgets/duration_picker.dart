@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../extensions.dart';
 
+const _units = [('h', 24), ('m', 60), ('s', 60)];
+
+/// Compact h/m/s picker: shows a single row of unit tiles and only reveals a
+/// scroll wheel for the unit the user taps.
 class DurationPicker extends StatefulWidget {
   const DurationPicker({
     super.key,
@@ -16,159 +21,220 @@ class DurationPicker extends StatefulWidget {
 }
 
 class _DurationPickerState extends State<DurationPicker> {
-  late int _h, _m, _s;
-  late final FixedExtentScrollController _hCtrl, _mCtrl, _sCtrl;
+  late List<int> _values;
+  int? _open;
+  FixedExtentScrollController? _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _h = widget.initial.inHours.clamp(0, 23);
-    _m = widget.initial.inMinutes.remainder(60);
-    _s = widget.initial.inSeconds.remainder(60);
-    _hCtrl = FixedExtentScrollController(initialItem: _h);
-    _mCtrl = FixedExtentScrollController(initialItem: _m);
-    _sCtrl = FixedExtentScrollController(initialItem: _s);
+    _values = [
+      widget.initial.inHours.clamp(0, 23),
+      widget.initial.inMinutes.remainder(60),
+      widget.initial.inSeconds.remainder(60),
+    ];
   }
 
   @override
   void dispose() {
-    _hCtrl.dispose();
-    _mCtrl.dispose();
-    _sCtrl.dispose();
+    _ctrl?.dispose();
     super.dispose();
   }
 
-  void _notify() => widget.onChanged(
-        Duration(hours: _h, minutes: _m, seconds: _s),
-      );
+  void _toggle(int index) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      if (_open == index) {
+        _open = null;
+        _ctrl?.dispose();
+        _ctrl = null;
+        return;
+      }
+      _open = index;
+      _ctrl?.dispose();
+      _ctrl = FixedExtentScrollController(initialItem: _values[index]);
+    });
+  }
+
+  void _select(int value) {
+    if (_values[_open!] == value) return;
+    HapticFeedback.selectionClick();
+    setState(() => _values[_open!] = value);
+    widget.onChanged(Duration(
+      hours: _values[0],
+      minutes: _values[1],
+      seconds: _values[2],
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _Wheel(
-          ctrl: _hCtrl,
-          count: 24,
-          label: 'h',
-          onChanged: (v) {
-            setState(() => _h = v);
-            _notify();
-          },
+        Row(
+          children: [
+            for (var i = 0; i < _units.length; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(
+                child: _UnitTile(
+                  value: _values[i],
+                  label: _units[i].$1,
+                  open: _open == i,
+                  onTap: () => _toggle(i),
+                ),
+              ),
+            ],
+          ],
         ),
-        const SizedBox(width: 8),
-        _Wheel(
-          ctrl: _mCtrl,
-          count: 60,
-          label: 'm',
-          onChanged: (v) {
-            setState(() => _m = v);
-            _notify();
-          },
-        ),
-        const SizedBox(width: 8),
-        _Wheel(
-          ctrl: _sCtrl,
-          count: 60,
-          label: 's',
-          onChanged: (v) {
-            setState(() => _s = v);
-            _notify();
-          },
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: _open == null
+              ? const SizedBox(width: double.infinity)
+              : Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < _units.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 8),
+                        Expanded(
+                          child: i == _open
+                              ? _Wheel(
+                                  ctrl: _ctrl!,
+                                  count: _units[i].$2,
+                                  selected: _values[i],
+                                  onChanged: _select,
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
         ),
       ],
     );
   }
 }
 
-class _Wheel extends StatefulWidget {
+class _UnitTile extends StatelessWidget {
+  const _UnitTile({
+    required this.value,
+    required this.label,
+    required this.open,
+    required this.onTap,
+  });
+
+  final int value;
+  final String label;
+  final bool open;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 48,
+        decoration: BoxDecoration(
+          color: open ? cs.primary.withValues(alpha: 0.12) : context.chipSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: open ? cs.primary : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              value.toString().padLeft(2, '0'),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+                color: open || value > 0
+                    ? (open ? cs.primary : cs.onSurface)
+                    : cs.onSurface.withValues(alpha: 0.35),
+              ),
+            ),
+            const SizedBox(width: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: open
+                    ? cs.primary.withValues(alpha: 0.7)
+                    : cs.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Wheel extends StatelessWidget {
   const _Wheel({
     required this.ctrl,
     required this.count,
-    required this.label,
+    required this.selected,
     required this.onChanged,
   });
 
   final FixedExtentScrollController ctrl;
   final int count;
-  final String label;
+  final int selected;
   final ValueChanged<int> onChanged;
-
-  @override
-  State<_Wheel> createState() => _WheelState();
-}
-
-class _WheelState extends State<_Wheel> {
-  late int _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.ctrl.initialItem;
-  }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Expanded(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return SizedBox(
+      height: 108,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          SizedBox(
-            height: 120,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                ListWheelScrollView.useDelegate(
-                  controller: widget.ctrl,
-                  itemExtent: 40,
-                  diameterRatio: 1.3,
-                  physics: const FixedExtentScrollPhysics(),
-                  onSelectedItemChanged: (i) {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selected = i);
-                    widget.onChanged(i);
-                  },
-                  childDelegate: ListWheelChildBuilderDelegate(
-                    childCount: widget.count,
-                    builder: (_, index) {
-                      final sel = index == _selected;
-                      return Center(
-                        child: Text(
-                          index.toString().padLeft(2, '0'),
-                          style: TextStyle(
-                            fontSize: sel ? 22 : 15,
-                            fontWeight:
-                                sel ? FontWeight.w700 : FontWeight.w400,
-                            color: sel
-                                ? cs.primary
-                                : cs.onSurface.withValues(alpha: 0.25),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                IgnorePointer(
-                  child: Container(
-                    height: 40,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: cs.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ],
+          IgnorePointer(
+            child: Container(
+              height: 36,
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            widget.label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
-              color: cs.onSurface.withValues(alpha: 0.4),
+          ListWheelScrollView.useDelegate(
+            controller: ctrl,
+            itemExtent: 36,
+            diameterRatio: 1.4,
+            physics: const FixedExtentScrollPhysics(),
+            onSelectedItemChanged: onChanged,
+            childDelegate: ListWheelChildBuilderDelegate(
+              childCount: count,
+              builder: (_, index) {
+                final sel = index == selected;
+                return Center(
+                  child: Text(
+                    index.toString().padLeft(2, '0'),
+                    style: TextStyle(
+                      fontSize: sel ? 21 : 15,
+                      fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
+                      color: sel
+                          ? cs.primary
+                          : cs.onSurface.withValues(alpha: 0.3),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
