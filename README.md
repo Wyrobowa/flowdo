@@ -122,8 +122,30 @@ desugaring — both are already set up. Exact alarms are requested via
 `SCHEDULE_EXACT_ALARM`; when the user declines, scheduling falls back to inexact
 and Settings shows a row offering to grant it.
 
-Release builds still sign with the debug keystore (`android/app/build.gradle.kts`),
-so the app cannot be uploaded to Play until a real signing config is added.
+Release builds are signed from `android/key.properties` when that file exists,
+and fall back to the debug keys when it does not — see Release signing below.
 
 **Web.** Sounds are held in memory rather than written to a temp file, and
 notifications are skipped entirely.
+
+### Release signing
+
+Play will not accept a build signed with the debug keys, so you need your own
+upload keystore. Generate one, keeping it outside the repo:
+
+```sh
+keytool -genkey -v -keystore ~/upload-keystore.jks \
+  -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+`keytool` asks for a password and a few name fields. Then copy
+`android/key.properties.example` to `android/key.properties` and fill in the
+password you chose, the alias (`upload`), and the absolute path to the `.jks`.
+
+`key.properties` and `*.jks` are gitignored — keep them that way. Neither the
+keystore nor its password belongs in this repo, and losing the keystore means
+you can no longer update the app on Play.
+
+With that in place, `flutter build appbundle --release` produces an upload-ready
+bundle. Without it the release build still signs with the debug keys, so
+`flutter run --release` works on a fresh clone.
