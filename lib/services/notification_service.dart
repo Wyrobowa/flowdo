@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -30,9 +31,20 @@ class NotificationService {
     );
   }
 
+  static AndroidFlutterLocalNotificationsPlugin? get _android =>
+      _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+
   /// Requests system notification permission. Returns true if granted.
   static Future<bool> requestPermission() async {
     if (kIsWeb) return false;
+
+    final android = _android;
+    if (android != null) {
+      // Android 13+ requires POST_NOTIFICATIONS to be granted at runtime.
+      return await android.requestNotificationsPermission() ?? false;
+    }
+
     bool granted = false;
     final macOS = _plugin.resolvePlatformSpecificImplementation<
         MacOSFlutterLocalNotificationsPlugin>();
@@ -48,8 +60,26 @@ class NotificationService {
             alert: true, badge: true, sound: true) ??
           false;
     }
-    if (macOS == null && iOS == null) granted = true; // Android handled at OS level
+    if (macOS == null && iOS == null) granted = true;
     return granted;
+  }
+
+  /// Whether alerts can be scheduled to fire at an exact time. Only ever false
+  /// on Android 12+, where the exact-alarm permission is granted separately.
+  static Future<bool> canScheduleExact() async {
+    if (kIsWeb) return false;
+    final android = _android;
+    if (android == null) return true;
+    return await android.canScheduleExactNotifications() ?? false;
+  }
+
+  /// Sends the user to the system screen where exact alarms are granted.
+  /// Android-only; returns false if there was nothing to ask for.
+  static Future<bool> requestExactAlarms() async {
+    if (kIsWeb) return false;
+    final android = _android;
+    if (android == null) return false;
+    return await android.requestExactAlarmsPermission() ?? false;
   }
 
   static Future<void> show(String title, String body) async {
@@ -85,16 +115,26 @@ class NotificationService {
       macOS: DarwinNotificationDetails(),
     );
     final tzWhen = tz.TZDateTime.from(when, tz.local);
-    await _plugin.zonedSchedule(
-      id.hashCode,
-      title,
-      body,
-      tzWhen,
-      details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-    );
+    // Scheduling an exact alarm without the permission throws, so downgrade to
+    // an inexact one instead of losing the alert entirely.
+    final mode = await canScheduleExact()
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
+    try {
+      await _plugin.zonedSchedule(
+        id.hashCode,
+        title,
+        body,
+        tzWhen,
+        details,
+        androidScheduleMode: mode,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } on PlatformException catch (e) {
+      // The permission can be revoked between the check and the call.
+      debugPrint('Could not schedule notification "$id": ${e.code}');
+    }
   }
 
   static Future<void> cancel(String id) async {

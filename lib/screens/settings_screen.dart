@@ -169,6 +169,7 @@ class SettingsScreen extends ConsumerWidget {
                 ref.read(notificationsEnabledProvider.notifier).set(val);
               },
                 ),
+                _ExactAlarmRow(visible: notifEnabled),
               ],
             ),
           ),
@@ -389,3 +390,86 @@ class _NavRow extends StatelessWidget {
   }
 }
 
+/// Android 14+ denies exact alarms by default, which makes phase-end alerts
+/// land minutes late. Offers a way to grant it; hides itself everywhere else.
+class _ExactAlarmRow extends StatefulWidget {
+  const _ExactAlarmRow({required this.visible});
+
+  final bool visible;
+
+  @override
+  State<_ExactAlarmRow> createState() => _ExactAlarmRowState();
+}
+
+class _ExactAlarmRowState extends State<_ExactAlarmRow>
+    with WidgetsBindingObserver {
+  bool _granted = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _check();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-check on the way back from the system settings screen.
+    if (state == AppLifecycleState.resumed) _check();
+  }
+
+  Future<void> _check() async {
+    final granted = await NotificationService.canScheduleExact();
+    if (mounted) setState(() => _granted = granted);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_granted || !widget.visible) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        _Divider(),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Precise timing',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Alerts may arrive a few minutes late. Allow exact alarms '
+                    'to be told the moment your timer ends.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: cs.onSurface.withValues(alpha: 0.5),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            TextButton(
+              onPressed: () async {
+                HapticFeedback.selectionClick();
+                await NotificationService.requestExactAlarms();
+              },
+              child: const Text('Allow'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
