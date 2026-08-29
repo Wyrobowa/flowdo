@@ -1,0 +1,10 @@
+# Copy this file to android/key.properties and fill in your own values.
+# The real key.properties is gitignored and must never be committed, and
+# neither must the keystore it points at.
+
+storePassword=the password you gave keytool for the keystore
+keyPassword=the password you gave keytool for the key
+keyAlias=upload
+# Absolute path to the keystore, kept outside the repo. A relative path is
+# resolved against android/app.
+storeFile=/Users/you/upload-keystore.jks
