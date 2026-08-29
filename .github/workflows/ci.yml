@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.41.9
+          cache: true
+          pub-cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # --no-fatal-infos: three known info lints are tracked in WYR-12. The flag
+      # still fails the build on warnings and errors, so nothing beyond infos is
+      # silenced. Drop it once WYR-12 lands.
+      - name: Analyze project source
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test
