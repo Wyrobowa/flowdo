@@ -89,7 +89,7 @@ void main() {
 
       expect(state.currentIndex, 0);
       expect(state.phase, SessionPhase.focus);
-      expect(state.secondsRemaining, 120);
+      expect(state.secondsRemaining, 999); // THROWAWAY: deliberately wrong, proves CI fails
       expect(state.isRunning, isTrue);
       expect(state.currentTask!.focusSeconds, 120);
 
