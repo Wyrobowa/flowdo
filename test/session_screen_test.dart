@@ -11,6 +11,7 @@ import 'package:flowdo/screens/session_screen.dart';
 import 'package:flowdo/services/notification_service.dart';
 import 'package:flowdo/theme.dart';
 
+import 'support/contrast.dart';
 import 'support/notification_stub.dart';
 
 /// Titles that never contain the word the progress assertions look for.
@@ -70,6 +71,14 @@ void main() {
     );
     await tester.pump();
     return (container, router);
+  }
+
+  /// Skip ends the focus phase, and a task with a break runs it next. The
+  /// second pump outlasts the 150ms the phase colour takes to cross over.
+  Future<void> skipToBreak(WidgetTester tester) async {
+    await tester.tap(find.text('Skip'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
   }
 
   /// Every label in the semantics tree that names the task position. The
@@ -191,13 +200,6 @@ void main() {
               .color!,
         );
 
-    /// Skip ends the focus phase, and a task with a break runs it next.
-    Future<void> skipToBreak(WidgetTester tester) async {
-      await tester.tap(find.text('Skip'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-    }
-
     for (final (name, theme) in [('light', appTheme), ('dark', darkTheme)]) {
       testWidgets('tells focus from break in the $name theme', (tester) async {
         final (container, _) = await pumpSession(tester, theme: theme);
@@ -222,6 +224,43 @@ void main() {
 
         expect(breakTime.position, breakTime.title);
         expect(breakTime.pauseFill, breakTime.title);
+
+        container.dispose();
+      });
+    }
+  });
+
+  group('the Pause glyph', () {
+    /// The contrast between the glyph and the disc under it, with both colours
+    /// read off the built tree and put through the WCAG formula, so the
+    /// assertion measures what the screen draws rather than repeating the
+    /// colours the screen was written to draw.
+    double pauseContrast(WidgetTester tester) {
+      final fill = (tester
+                  .widget<AnimatedContainer>(find.ancestor(
+                    of: find.byIcon(Icons.pause_rounded),
+                    matching: find.byType(AnimatedContainer),
+                  ))
+                  .decoration!
+              as BoxDecoration)
+          .color!;
+      final glyph =
+          tester.widget<Icon>(find.byIcon(Icons.pause_rounded)).color!;
+      return contrastRatio(glyph, fill);
+    }
+
+    for (final (name, theme) in [('light', appTheme), ('dark', darkTheme)]) {
+      testWidgets('clears 3:1 against the fill of either phase in the $name '
+          'theme', (tester) async {
+        final (container, _) = await pumpSession(tester, theme: theme);
+
+        expect(pauseContrast(tester), greaterThanOrEqualTo(3.0),
+            reason: 'the focus fill in the $name theme');
+
+        await skipToBreak(tester);
+
+        expect(pauseContrast(tester), greaterThanOrEqualTo(3.0),
+            reason: 'the break fill in the $name theme');
 
         container.dispose();
       });

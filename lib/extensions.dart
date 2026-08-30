@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 extension DurationFormat on Duration {
@@ -30,12 +31,41 @@ extension AppTheme on BuildContext {
   /// break takes a cooler teal so the phase reads without reading the label.
   ///
   /// Both break tones are chosen against two limits: they fill the 72pt Pause
-  /// button under a white glyph (5.5:1 light, 3.7:1 dark, over the 3:1 asked
-  /// of a non-text mark) and they are also drawn as small text on the
-  /// scaffold (5.2:1 on #F8F8F8, 5.0:1 on #111111, over the 4.5:1 asked of
-  /// text). One tone cannot do both on both backgrounds, hence the pair.
+  /// button, whose glyph is derived from the fill so the mark clears 3:1
+  /// either way, and they are also drawn as small text on the scaffold
+  /// (5.2:1 on #F8F8F8, 5.0:1 on #111111, over the 4.5:1 asked of text). One
+  /// tone cannot do both on both backgrounds, hence the pair.
   Color get focusColor => Theme.of(this).colorScheme.primary;
 
   Color get breakColor =>
       _isDark ? const Color(0xFF0D9488) : const Color(0xFF0F766E);
+}
+
+/// The ink a filled control draws on top of a fill of this colour: whichever
+/// of the app's two inks the fill contrasts with more.
+///
+/// A filled control takes its fill from the phase, and the phase colours are
+/// not all in the `ColorScheme` — the break tone is ours — so no
+/// `onPrimary`-style token covers every fill. Reading the ink off the fill
+/// does, whatever the fill and whoever adds it: the worse of the two inks is
+/// never chosen, which holds the mark at 4.3:1 or better across the whole
+/// colour space, over the 3:1 asked of a non-text mark.
+///
+/// `ThemeData.estimateBrightnessForColor` will not do here. It biases towards
+/// white past the point where white stops being the better ink — its own
+/// comment says as much — and leaves mid-toned fills at 2.7:1.
+extension OnFill on Color {
+  Color get onFill => _contrast(this, Colors.white) >= _contrast(this, _ink)
+      ? Colors.white
+      : _ink;
+}
+
+/// The near-black the light theme sets its headings in.
+const _ink = Color(0xFF111111);
+
+/// The WCAG contrast ratio between two opaque colours.
+double _contrast(Color a, Color b) {
+  final one = a.computeLuminance();
+  final other = b.computeLuminance();
+  return (max(one, other) + 0.05) / (min(one, other) + 0.05);
 }
