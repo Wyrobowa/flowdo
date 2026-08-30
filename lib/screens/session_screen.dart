@@ -339,7 +339,7 @@ class _CircularTimerState extends State<_CircularTimer>
       excludeSemantics: true,
       child: AnimatedBuilder(
       animation: _pulse,
-      builder: (_, __) {
+      builder: (_, _) {
         return SizedBox(
           width: 280,
           height: 280,
