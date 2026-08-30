@@ -16,6 +16,7 @@ import 'package:flowdo/screens/settings_screen.dart';
 import 'package:flowdo/screens/timer_screen.dart';
 import 'package:flowdo/theme.dart';
 import 'package:flowdo/widgets/duration_picker.dart';
+import 'package:flowdo/widgets/repeat_picker.dart';
 import 'package:flowdo/widgets/task_card.dart';
 
 import 'support/notification_stub.dart';
@@ -156,6 +157,133 @@ void main() {
     });
   });
 
+  group('RepeatPicker', () {
+    testWidgets('the closed tile announces its count as a button',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _host(RepeatPicker(initial: 3, max: 12, onChanged: (_) {})),
+      );
+
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Repeat 3 times')),
+        matchesSemantics(
+          label: 'Repeat 3 times',
+          hint: 'Adjust',
+          isButton: true,
+          hasTapAction: true,
+          hasSelectedState: true,
+          isSelected: false,
+        ),
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('a count of one is spoken as once, not "1 times"',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _host(RepeatPicker(initial: 1, max: 12, onChanged: (_) {})),
+      );
+
+      expect(find.bySemanticsLabel('Repeat once'), findsOneWidget);
+
+      handle.dispose();
+    });
+
+    testWidgets('the open wheel reports itself as selected and adjustable',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _host(RepeatPicker(initial: 3, max: 12, onChanged: (_) {})),
+      );
+
+      await tester.tap(find.bySemanticsLabel('Repeat 3 times'));
+      await tester.pumpAndSettle();
+
+      // The cell is the wheel now: no tap action, because there is nothing to
+      // collapse, and it has to be operable without a swipe gesture. No
+      // excludeSemantics either, or the wheel's values would be swallowed.
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Repeat 3 times')),
+        matchesSemantics(
+          label: 'Repeat 3 times',
+          hint: 'Swipe up or down to adjust',
+          hasSelectedState: true,
+          isSelected: true,
+          hasIncreaseAction: true,
+          hasDecreaseAction: true,
+        ),
+      );
+
+      handle.dispose();
+    });
+
+    testWidgets('the increase action moves the open wheel', (tester) async {
+      final handle = tester.ensureSemantics();
+      int? reported;
+      await tester.pumpWidget(
+        _host(RepeatPicker(initial: 3, max: 12, onChanged: (v) => reported = v)),
+      );
+
+      await tester.tap(find.bySemanticsLabel('Repeat 3 times'));
+      await tester.pumpAndSettle();
+
+      tester.semantics.increase(find.semantics.byLabel('Repeat 3 times'));
+      await tester.pumpAndSettle();
+
+      expect(reported, 4);
+
+      handle.dispose();
+    });
+
+    testWidgets('meets the tap target and labelling guidelines',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _host(RepeatPicker(initial: 3, max: 12, onChanged: (_) {})),
+      );
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
+      await tester.tap(find.bySemanticsLabel('Repeat 3 times'));
+      await tester.pumpAndSettle();
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
+      handle.dispose();
+    });
+
+    testWidgets('survives a large text scale in both states', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: appTheme,
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+            child: Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(16),
+                child: RepeatPicker(initial: 3, max: 12, onChanged: (_) {}),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('3'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('screens meet the tap target and labelling guidelines', () {
     Future<void> check(WidgetTester tester, Widget screen) async {
       final handle = tester.ensureSemantics();
@@ -183,7 +311,7 @@ void main() {
       await check(tester, const SettingsScreen());
     });
 
-    testWidgets('tasks, with a task list and the repeat chips showing',
+    testWidgets('tasks, with a task list and the repeat picker showing',
         (tester) async {
       SharedPreferences.setMockInitialValues({
         'tasks_v1': jsonEncode([
