@@ -22,7 +22,14 @@ class SessionScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
 
     if (session == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => context.go('/'));
+      // Only a session screen still on top needs sending home. Stopping a
+      // session rebuilds this one while it is already on its way out to
+      // session.origin, and redirecting then would overrule that.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted && (ModalRoute.of(context)?.isCurrent ?? true)) {
+          context.go('/');
+        }
+      });
       return const Scaffold(body: SizedBox.shrink());
     }
 
@@ -59,18 +66,6 @@ class _ActiveSession extends ConsumerWidget {
           isBreak ? 'Break' : 'Focus',
           style: TextStyle(color: phaseColor, fontSize: 20, fontWeight: FontWeight.w700),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              final origin = session.origin;
-              ref.read(sessionProvider.notifier).stop();
-              context.go(origin);
-            },
-            child: const Text('End session'),
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       body: SafeArea(
         child: Column(
@@ -464,6 +459,9 @@ class _Controls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notifier = ref.read(sessionProvider.notifier);
+    // Stop is the only way out of a session now, so a thumb that misses Pause
+    // must not land on it. 24 either side keeps the row symmetric around Pause
+    // and still fits 232pt of controls on the narrowest phone.
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -473,7 +471,7 @@ class _Controls extends StatelessWidget {
           onTap: notifier.skip,
           outlined: true,
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 24),
         _ControlButton(
           icon: session.isRunning
               ? Icons.pause_rounded
@@ -483,7 +481,7 @@ class _Controls extends StatelessWidget {
           color: phaseColor,
           large: true,
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 24),
         _ControlButton(
           icon: Icons.stop_rounded,
           label: 'Stop',
