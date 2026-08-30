@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+
+  # Without this, action versions are never bumped automatically — which is how
+  # the whole account drifted onto Node 20 actions unnoticed (WYR-18).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"
