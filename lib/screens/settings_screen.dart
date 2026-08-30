@@ -103,18 +103,26 @@ class SettingsScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 DurationPicker(
                   initial: Duration(seconds: defaultFocus),
-                  onChanged: (d) => ref
-                      .read(defaultFocusProvider.notifier)
-                      .set(d.inSeconds.clamp(1, 86399)),
+                  onChanged: (d) {
+                    ref
+                        .read(defaultFocusProvider.notifier)
+                        .set(d.inSeconds.clamp(1, 86399));
+                    // Changing a default here is deliberate, so it outranks
+                    // whatever Quick timer last ran.
+                    ref.read(lastFocusProvider.notifier).clear();
+                  },
                 ),
                 const SizedBox(height: 20),
                 _RowLabel('Break after'),
                 const SizedBox(height: 12),
                 DurationPicker(
                   initial: Duration(seconds: defaultBreak),
-                  onChanged: (d) => ref
-                      .read(defaultBreakProvider.notifier)
-                      .set(d.inSeconds.clamp(0, 86399)),
+                  onChanged: (d) {
+                    ref
+                        .read(defaultBreakProvider.notifier)
+                        .set(d.inSeconds.clamp(0, 86399));
+                    ref.read(lastBreakProvider.notifier).clear();
+                  },
                 ),
                 const SizedBox(height: 20),
                 _RowLabel('Countdown warning'),

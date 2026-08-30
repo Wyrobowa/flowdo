@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers/defaults_provider.dart';
 import 'providers/theme_provider.dart';
 import 'router.dart';
 import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await loadPreferences();
   runApp(const ProviderScope(child: FlowdoApp()));
 }
 
