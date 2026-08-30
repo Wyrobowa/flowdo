@@ -58,7 +58,8 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('an open tile reports itself as selected', (tester) async {
+    testWidgets('the open unit reports itself as selected and adjustable',
+        (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
         _host(DurationPicker(initial: const Duration(minutes: 25), onChanged: (_) {})),
@@ -67,17 +68,40 @@ void main() {
       await tester.tap(find.bySemanticsLabel('25 minutes'));
       await tester.pumpAndSettle();
 
+      // Still one node for the unit, but it is the wheel now: nothing to
+      // collapse, and it has to be operable without a swipe gesture.
       expect(
         tester.getSemantics(find.bySemanticsLabel('25 minutes')),
         matchesSemantics(
           label: '25 minutes',
-          hint: 'Collapse',
-          isButton: true,
-          hasTapAction: true,
+          hint: 'Swipe up or down to adjust',
           hasSelectedState: true,
           isSelected: true,
+          hasIncreaseAction: true,
+          hasDecreaseAction: true,
         ),
       );
+
+      handle.dispose();
+    });
+
+    testWidgets('the increase action moves the open wheel', (tester) async {
+      final handle = tester.ensureSemantics();
+      Duration? reported;
+      await tester.pumpWidget(
+        _host(DurationPicker(
+          initial: const Duration(minutes: 25),
+          onChanged: (d) => reported = d,
+        )),
+      );
+
+      await tester.tap(find.bySemanticsLabel('25 minutes'));
+      await tester.pumpAndSettle();
+
+      tester.semantics.increase(find.semantics.byLabel('25 minutes'));
+      await tester.pumpAndSettle();
+
+      expect(reported, const Duration(minutes: 26));
 
       handle.dispose();
     });
@@ -92,11 +116,19 @@ void main() {
       await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
 
+      // The remaining tiles still have to clear the guidelines once one unit
+      // has turned into the wheel.
+      await tester.tap(find.bySemanticsLabel('25 minutes'));
+      await tester.pumpAndSettle();
+
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+
       handle.dispose();
     });
 
-    testWidgets('tiles survive a large text scale without clipping',
-        (tester) async {
+    testWidgets('survives a large text scale in both states', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: appTheme,
@@ -114,6 +146,11 @@ void main() {
           ),
         ),
       );
+
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('m'));
+      await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
     });
