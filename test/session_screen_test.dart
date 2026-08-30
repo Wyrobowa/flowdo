@@ -41,6 +41,7 @@ void main() {
     int taskCount = 3,
     int cycleSize = 0,
     String origin = '/',
+    ThemeData? theme,
   }) async {
     final container = ProviderContainer();
     if (taskCount > 0) {
@@ -64,7 +65,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp.router(theme: appTheme, routerConfig: router),
+        child: MaterialApp.router(theme: theme ?? appTheme, routerConfig: router),
       ),
     );
     await tester.pump();
@@ -167,5 +168,63 @@ void main() {
       container.dispose();
       handle.dispose();
     });
+  });
+
+  group('the phase colour', () {
+    /// Every colour the screen resolves from `phaseColor`, read back off the
+    /// built tree rather than restated here, so a consumer left on the theme
+    /// primary shows up as a mismatch inside the record.
+    ({Color title, Color position, Color pauseFill}) phaseColors(
+      WidgetTester tester, {
+      required String phaseLabel,
+    }) =>
+        (
+          title: tester.widget<Text>(find.text(phaseLabel)).style!.color!,
+          position: tester.widget<Text>(find.text('Task 1 of 3')).style!.color!,
+          pauseFill: (tester
+                      .widget<AnimatedContainer>(find.ancestor(
+                        of: find.byIcon(Icons.pause_rounded),
+                        matching: find.byType(AnimatedContainer),
+                      ))
+                      .decoration!
+                  as BoxDecoration)
+              .color!,
+        );
+
+    /// Skip ends the focus phase, and a task with a break runs it next.
+    Future<void> skipToBreak(WidgetTester tester) async {
+      await tester.tap(find.text('Skip'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    for (final (name, theme) in [('light', appTheme), ('dark', darkTheme)]) {
+      testWidgets('tells focus from break in the $name theme', (tester) async {
+        final (container, _) = await pumpSession(tester, theme: theme);
+
+        final focus = phaseColors(tester, phaseLabel: 'Focus');
+        await skipToBreak(tester);
+        final breakTime = phaseColors(tester, phaseLabel: 'Break');
+
+        expect(breakTime.title, isNot(focus.title));
+        expect(breakTime.position, isNot(focus.position));
+        expect(breakTime.pauseFill, isNot(focus.pauseFill));
+
+        container.dispose();
+      });
+
+      testWidgets('draws the whole break screen in one colour in the $name '
+          'theme', (tester) async {
+        final (container, _) = await pumpSession(tester, theme: theme);
+        await skipToBreak(tester);
+
+        final breakTime = phaseColors(tester, phaseLabel: 'Break');
+
+        expect(breakTime.position, breakTime.title);
+        expect(breakTime.pauseFill, breakTime.title);
+
+        container.dispose();
+      });
+    }
   });
 }
