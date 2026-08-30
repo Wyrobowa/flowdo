@@ -25,4 +25,17 @@ extension AppTheme on BuildContext {
 
   Color get cardSurface =>
       _isDark ? const Color(0xFF1E1E1E) : Colors.white;
+
+  /// The hue a running session is drawn in. Focus keeps the app's amber;
+  /// break takes a cooler teal so the phase reads without reading the label.
+  ///
+  /// Both break tones are chosen against two limits: they fill the 72pt Pause
+  /// button under a white glyph (5.5:1 light, 3.7:1 dark, over the 3:1 asked
+  /// of a non-text mark) and they are also drawn as small text on the
+  /// scaffold (5.2:1 on #F8F8F8, 5.0:1 on #111111, over the 4.5:1 asked of
+  /// text). One tone cannot do both on both backgrounds, hence the pair.
+  Color get focusColor => Theme.of(this).colorScheme.primary;
+
+  Color get breakColor =>
+      _isDark ? const Color(0xFF0D9488) : const Color(0xFF0F766E);
 }

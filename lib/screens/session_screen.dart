@@ -53,10 +53,9 @@ class _ActiveSession extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef wRef) {
-    final cs = Theme.of(context).colorScheme;
     final task = session.currentTask;
     final isBreak = session.phase == SessionPhase.breakTime;
-    final phaseColor = cs.primary;
+    final phaseColor = isBreak ? context.breakColor : context.focusColor;
     final countdownSeconds = wRef.watch(countdownSecondsProvider);
 
     return Scaffold(
