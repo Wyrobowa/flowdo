@@ -103,9 +103,10 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
                     onTap: select,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
-                      constraints: const BoxConstraints(minHeight: 48),
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      // Vertical padding reaches the 48dp tap target without an
+                      // `alignment`, which would insert an Align and stretch the
+                      // chip to the Wrap's full width.
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                       decoration: BoxDecoration(
                         color: sel ? cs.primary : context.chipSurface,
                         borderRadius: BorderRadius.circular(12),
