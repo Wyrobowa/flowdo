@@ -6,9 +6,15 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
     groups:
+      # Minor and patch only. Majors deliberately fall outside the group so each
+      # arrives as its own reviewable PR — a grouped bump of five packages that
+      # happened to include three majors is how flowdo's main went red.
       dependencies:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Without this, action versions are never bumped automatically — which is how
   # the whole account drifted onto Node 20 actions unnoticed (WYR-18).
@@ -20,3 +26,6 @@ updates:
       actions:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
