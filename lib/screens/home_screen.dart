@@ -7,6 +7,7 @@ import '../models/task.dart';
 import '../providers/session_provider.dart';
 import '../providers/tasks_provider.dart';
 import '../widgets/add_task_sheet.dart';
+import '../widgets/repeat_picker.dart';
 import '../widgets/task_card.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -140,7 +141,6 @@ class _StartSessionBar extends ConsumerStatefulWidget {
 
 class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
   int _cycles = 1;
-  static const _cycleOptions = [1, 2, 3, 4, 5];
 
   @override
   Widget build(BuildContext context) {
@@ -157,56 +157,36 @@ class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
+            // The picker grows downward when it opens; the label stays where
+            // it is, boxed to the closed tile's height.
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Repeat',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface.withValues(alpha: 0.5),
+              SizedBox(
+                height: 48,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Repeat',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
-              ..._cycleOptions.map((v) {
-                final sel = v == _cycles;
-                void select() {
-                  HapticFeedback.selectionClick();
-                  setState(() => _cycles = v);
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Semantics(
-                    button: true,
-                    inMutuallyExclusiveGroup: true,
-                    selected: sel,
-                    label: 'Repeat $v times',
-                    onTap: select,
-                    excludeSemantics: true,
-                    child: GestureDetector(
-                    onTap: select,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      constraints: const BoxConstraints(minHeight: 48),
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: sel ? cs.primary : context.chipSurface,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${v}×',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: sel ? cs.onPrimary : cs.onSurface,
-                        ),
-                      ),
-                    ),
-                    ),
-                  ),
-                );
-              }),
+              Expanded(
+                child: RepeatPicker(
+                  initial: _cycles,
+                  // A pass here is the whole pending list, so the session is
+                  // max x pending.length long: six passes of ten tasks is
+                  // already a day of focus.
+                  max: 6,
+                  compact: true,
+                  onChanged: (v) => setState(() => _cycles = v),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),

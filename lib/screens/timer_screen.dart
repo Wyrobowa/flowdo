@@ -7,6 +7,7 @@ import '../models/task.dart';
 import '../providers/defaults_provider.dart';
 import '../providers/session_provider.dart';
 import '../widgets/duration_picker.dart';
+import '../widgets/repeat_picker.dart';
 
 class TimerScreen extends ConsumerStatefulWidget {
   const TimerScreen({super.key});
@@ -19,8 +20,6 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
   late Duration _focusDuration;
   late Duration _breakDuration;
   int _cycles = 1;
-
-  static const _cycleOptions = [1, 2, 3, 4, 5, 6, 8];
 
   @override
   void initState() {
@@ -49,8 +48,6 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -82,47 +79,12 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
               const SizedBox(height: 20),
               const _Label('Repeat'),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _cycleOptions.map((v) {
-                  final sel = v == _cycles;
-                  void select() {
-                    HapticFeedback.selectionClick();
-                    setState(() => _cycles = v);
-                  }
-
-                  return Semantics(
-                    button: true,
-                    inMutuallyExclusiveGroup: true,
-                    selected: sel,
-                    label: 'Repeat $v times',
-                    onTap: select,
-                    excludeSemantics: true,
-                    child: GestureDetector(
-                    onTap: select,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      // Vertical padding reaches the 48dp tap target without an
-                      // `alignment`, which would insert an Align and stretch the
-                      // chip to the Wrap's full width.
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: sel ? cs.primary : context.chipSurface,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${v}×',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: sel ? Colors.white : cs.onSurface,
-                        ),
-                      ),
-                    ),
-                    ),
-                  );
-                }).toList(),
+              RepeatPicker(
+                initial: _cycles,
+                // Twelve focus/break pairs is a six-hour day of pomodoros;
+                // past that nobody is running one uninterrupted session.
+                max: 12,
+                onChanged: (v) => setState(() => _cycles = v),
               ),
               const SizedBox(height: 32),
               _Preview(
