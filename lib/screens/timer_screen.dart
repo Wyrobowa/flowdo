@@ -67,21 +67,21 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const _Label('Focus for'),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               DurationPicker(
                 initial: _focusDuration,
                 onChanged: (d) => setState(() => _focusDuration = d),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
               const _Label('Then break for'),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               DurationPicker(
                 initial: _breakDuration,
                 onChanged: (d) => setState(() => _breakDuration = d),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
               const _Label('Repeat'),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -151,10 +151,10 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.4,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
         ),
       );
 }
