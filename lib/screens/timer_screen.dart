@@ -19,19 +19,29 @@ class TimerScreen extends ConsumerStatefulWidget {
 class _TimerScreenState extends ConsumerState<TimerScreen> {
   late Duration _focusDuration;
   late Duration _breakDuration;
-  int _cycles = 1;
+  late int _cycles;
 
   @override
   void initState() {
     super.initState();
-    _focusDuration = Duration(seconds: ref.read(defaultFocusProvider));
-    _breakDuration = Duration(seconds: ref.read(defaultBreakProvider));
+    // Reopen on the setup last started, so repeating it is one tap. Nothing is
+    // remembered before the first run, and a Settings change clears what is.
+    _focusDuration = Duration(
+      seconds: ref.read(lastFocusProvider) ?? ref.read(defaultFocusProvider),
+    );
+    _breakDuration = Duration(
+      seconds: ref.read(lastBreakProvider) ?? ref.read(defaultBreakProvider),
+    );
+    _cycles = ref.read(lastCyclesProvider) ?? 1;
   }
 
   void _start() {
     HapticFeedback.mediumImpact();
     final focusSecs = _focusDuration.inSeconds.clamp(1, 86399);
     final breakSecs = _breakDuration.inSeconds.clamp(0, 86399);
+    ref.read(lastFocusProvider.notifier).set(focusSecs);
+    ref.read(lastBreakProvider.notifier).set(breakSecs);
+    ref.read(lastCyclesProvider.notifier).set(_cycles);
     final task = Task(
       title: 'Focus',
       focusSeconds: focusSecs,
