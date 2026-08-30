@@ -78,8 +78,16 @@ class _ActiveSession extends ConsumerWidget {
               totalCycles: session.totalCycles,
               color: phaseColor,
             ),
+            // Naming the task position costs a line, and the task block plus
+            // the 280pt ring already fill a short screen. Let this region
+            // scroll instead of overflowing; it still centres whenever there
+            // is room, and the controls below stay pinned either way.
             Expanded(
-              child: Column(
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AnimatedSwitcher(
@@ -168,6 +176,9 @@ class _ActiveSession extends ConsumerWidget {
                     phaseLabel: isBreak ? 'Break' : 'Focus',
                   ),
                 ],
+                  ),
+                  ),
+                ),
               ),
             ),
             _Controls(session: session, ref: ref, phaseColor: phaseColor),
@@ -194,7 +205,10 @@ class _TaskProgress extends StatelessWidget {
   final int totalCycles;
   final Color color;
 
-  String get _semanticLabel {
+  /// Drawn and spoken from the same string, so the bars never say one thing
+  /// and the screen reader another. The region excludes its own semantics, so
+  /// the visible copy adds no second announcement.
+  String get _label {
     final task = 'Task $currentInCycle of $tasksPerCycle';
     return totalCycles > 1
         ? 'Round $currentCycle of $totalCycles, $task'
@@ -203,23 +217,22 @@ class _TaskProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        label: _semanticLabel,
+        label: _label,
         excludeSemantics: true,
         child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           children: [
-            if (totalCycles > 1) ...[
-              Text(
-                'Round $currentCycle of $totalCycles',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
+            Text(
+              _label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: color,
               ),
-              const SizedBox(height: 8),
-            ],
+            ),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(tasksPerCycle, (i) {
