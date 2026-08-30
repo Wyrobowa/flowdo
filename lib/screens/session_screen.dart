@@ -567,8 +567,11 @@ class _ControlButton extends StatelessWidget {
               child: Icon(
                 icon,
                 size: iconSize,
-                color:
-                    outlined ? cs.onSurface.withValues(alpha: 0.5) : Colors.white,
+                // A filled glyph takes its ink from the fill it sits on, so
+                // the mark holds up against a fill of any lightness.
+                color: outlined
+                    ? cs.onSurface.withValues(alpha: 0.5)
+                    : effectiveColor.onFill,
               ),
             ),
             const SizedBox(height: 6),
