@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
 import '../providers/features_provider.dart';
+import '../providers/session_provider.dart';
 import '../providers/stats_provider.dart';
 import '../providers/tasks_provider.dart';
 
@@ -12,8 +14,9 @@ class ModeSelectScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final features = ref.watch(featuresProvider);
-    final tasks = ref.watch(tasksProvider);
-    final pendingTasks = tasks.where((t) => !t.isDone).length;
+    final pending = ref.watch(pendingTasksProvider);
+    final pendingLabel =
+        '${pending.length} task${pending.length == 1 ? '' : 's'}';
     final accent = Theme.of(context).colorScheme.primary;
     final stats = ref.watch(statsProvider);
 
@@ -76,10 +79,23 @@ class ModeSelectScreen extends ConsumerWidget {
                   icon: Icons.checklist_rounded,
                   title: 'Tasks & breaks',
                   description: 'Add tasks with custom focus time and breaks.',
-                  badge: pendingTasks > 0
-                      ? '$pendingTasks task${pendingTasks == 1 ? '' : 's'}'
-                      : null,
+                  badge: pending.isEmpty ? null : pendingLabel,
                   onTap: () => context.go('/tasks'),
+                  // A single pass of the pending list, the way the Start bar
+                  // runs it at a repeat of one. Anything else is a trip to
+                  // the list and its repeat picker.
+                  onPlay: pending.isEmpty
+                      ? null
+                      : () {
+                          HapticFeedback.mediumImpact();
+                          ref.read(sessionProvider.notifier).start(
+                                pending,
+                                cycleSize: 0,
+                                origin: '/tasks',
+                              );
+                          context.go('/session');
+                        },
+                  playLabel: 'Start $pendingLabel',
                 ),
                 const SizedBox(height: 14),
               ],
@@ -156,7 +172,10 @@ class _ModeCard extends StatelessWidget {
     required this.description,
     required this.badge,
     required this.onTap,
-  });
+    this.onPlay,
+    this.playLabel,
+  }) : assert(onPlay == null || playLabel != null,
+            'A play control needs a label of its own');
 
   final Color color;
   final IconData icon;
@@ -165,87 +184,145 @@ class _ModeCard extends StatelessWidget {
   final String? badge;
   final VoidCallback onTap;
 
+  /// Runs what the card is a summary of, without opening it. Omitted when
+  /// there is nothing to run.
+  final VoidCallback? onPlay;
+  final String? playLabel;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    // InkWell gives a tap action but no button role, and the badge would
-    // otherwise be read as a stray fragment.
-    return Semantics(
-      button: true,
-      label: [title, description, if (badge != null) badge].join(', '),
-      onTap: onTap,
-      excludeSemantics: true,
-      child: Material(
+    return Material(
       color: context.cardSurface,
       borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: color, size: 26),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
+      child: Row(
+        children: [
+          // InkWell gives a tap action but no button role, and the badge would
+          // otherwise be read as a stray fragment. The merge covers the body
+          // alone, not the whole card: the play control stands beside it as a
+          // node of its own, where a descendant would be swallowed here.
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: [title, description, if (badge != null) badge].join(', '),
+              onTap: onTap,
+              excludeSemantics: true,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: onTap,
+                child: Padding(
+                  padding:
+                      EdgeInsets.fromLTRB(20, 20, onPlay == null ? 20 : 8, 20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Icon(icon, color: color, size: 26),
                       ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: cs.onSurface.withValues(alpha: 0.5),
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (badge != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        badge!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: color,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              description,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: cs.onSurface.withValues(alpha: 0.5),
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: cs.onSurface.withValues(alpha: 0.2),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          if (badge != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                badge!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: color,
+                                ),
+                              ),
+                            ),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 14,
+                            color: cs.onSurface.withValues(alpha: 0.2),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+          if (onPlay != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: _PlayButton(
+                color: color,
+                label: playLabel!,
+                onPressed: onPlay!,
+              ),
+            ),
+        ],
       ),
+    );
+  }
+}
+
+/// Starts a mode's stored setup from its card. A control in its own right, so
+/// it carries its own role, label and tap action rather than leaning on the
+/// card's — the exclusion around the card body would swallow the button
+/// underneath, leaving a target a screen reader can see but not press.
+class _PlayButton extends StatelessWidget {
+  const _PlayButton({
+    required this.color,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final Color color;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      onTap: onPressed,
+      excludeSemantics: true,
+      child: IconButton(
+        onPressed: onPressed,
+        icon: const Icon(Icons.play_arrow_rounded),
+        // The padded tap target holds the 48dp box around the smaller disc.
+        style: IconButton.styleFrom(
+          backgroundColor: color.withValues(alpha: 0.12),
+          foregroundColor: color,
+        ),
       ),
     );
   }

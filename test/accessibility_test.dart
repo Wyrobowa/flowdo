@@ -303,6 +303,18 @@ void main() {
       await check(tester, const ModeSelectScreen());
     });
 
+    testWidgets('mode select, with a pending list on the tasks card',
+        (tester) async {
+      // The card only offers its play control when there is something to run.
+      SharedPreferences.setMockInitialValues({
+        'tasks_v1': jsonEncode([
+          Task(title: 'Write the report', focusSeconds: 1500, breakSeconds: 300)
+              .toJson(),
+        ]),
+      });
+      await check(tester, const ModeSelectScreen());
+    });
+
     testWidgets('quick timer', (tester) async {
       await check(tester, const TimerScreen());
     });
