@@ -31,3 +31,36 @@ jobs:
 
       - name: Run tests
         run: flutter test
+
+  # Separate from analyze-and-test on purpose: this needs a JDK and the Android
+  # SDK and takes minutes rather than seconds. Chaining it would slow every PR,
+  # and a toolchain hiccup here must not be able to mask a real test failure.
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.41.9
+          cache: true
+          pub-cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # No keystore and no secrets. android/app/build.gradle.kts reads
+      # key.properties only if it exists and falls back to debug signing when it
+      # does not, so this compiles the real Android build without one. The APK
+      # it produces is debug-signed and unshippable by design — this is a
+      # compile check, not release automation.
+      - name: Build release APK
+        run: flutter build apk --release
