@@ -23,13 +23,16 @@ class SettingsScreen extends ConsumerWidget {
     final countdownSeconds = ref.watch(countdownSecondsProvider);
     final notifEnabled = ref.watch(notificationsEnabledProvider);
     final soundsEnabled = ref.watch(soundsEnabledProvider);
+    // Read live, so turning the second mode back on below sends Back to the
+    // mode picker rather than to the screen the user arrived from.
+    final home = ref.watch(homeRouteProvider);
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Back',
-          onPressed: () => context.go('/'),
+          onPressed: () => context.go(home),
         ),
         title: const Text('Settings'),
       ),

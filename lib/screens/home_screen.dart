@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../extensions.dart';
 import '../models/task.dart';
+import '../providers/features_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/tasks_provider.dart';
 import '../widgets/add_task_sheet.dart';
@@ -18,14 +19,21 @@ class HomeScreen extends ConsumerWidget {
     final tasks = ref.watch(tasksProvider);
     final pending = ref.watch(pendingTasksProvider);
     final doneCount = tasks.where((t) => t.isDone).length;
+    final home = ref.watch(homeRouteProvider);
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back',
-          onPressed: () => context.go('/'),
-        ),
+        // Nothing sits behind this screen when tasks are the only mode, so it
+        // carries no back arrow then — and Settings has to be here either way,
+        // since the mode picker it otherwise lives on may never be shown.
+        automaticallyImplyLeading: false,
+        leading: home == '/tasks'
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back',
+                onPressed: () => context.go(home),
+              ),
         title: const Text('Tasks & breaks'),
         actions: [
           if (doneCount > 0)
@@ -34,6 +42,11 @@ class HomeScreen extends ConsumerWidget {
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Reset'),
             ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => context.go('/settings'),
+          ),
           const SizedBox(width: 4),
         ],
       ),
