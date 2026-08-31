@@ -12,6 +12,10 @@ Future<void> loadPreferences() async {
   _prefs = await SharedPreferences.getInstance();
 }
 
+/// What [loadPreferences] cached, for notifiers elsewhere that have to seed
+/// themselves before the first frame. Null until it has run.
+SharedPreferences? get preloadedPreferences => _prefs;
+
 class _DefaultIntNotifier extends StateNotifier<int> {
   _DefaultIntNotifier(String key, int fallback)
       : _key = key,

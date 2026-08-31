@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'defaults_provider.dart';
 
 class FeaturesState {
   final bool timer;
@@ -14,16 +15,20 @@ class FeaturesState {
 }
 
 class FeaturesNotifier extends StateNotifier<FeaturesState> {
-  FeaturesNotifier() : super(const FeaturesState()) {
-    _load();
+  // Seeded before the first frame where it can be: the route the app opens on
+  // follows from this, so a load that lands later would show the mode picker
+  // to someone who turned a mode off.
+  FeaturesNotifier() : super(_stored(preloadedPreferences)) {
+    if (preloadedPreferences == null) _load();
   }
 
+  static FeaturesState _stored(SharedPreferences? prefs) => FeaturesState(
+        timer: prefs?.getBool('feature_timer') ?? true,
+        tasks: prefs?.getBool('feature_tasks') ?? true,
+      );
+
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    state = FeaturesState(
-      timer: prefs.getBool('feature_timer') ?? true,
-      tasks: prefs.getBool('feature_tasks') ?? true,
-    );
+    state = _stored(await SharedPreferences.getInstance());
   }
 
   Future<void> setTimer(bool val) => _update(state.copyWith(timer: val), 'feature_timer', val);
@@ -40,3 +45,12 @@ class FeaturesNotifier extends StateNotifier<FeaturesState> {
 final featuresProvider = StateNotifierProvider<FeaturesNotifier, FeaturesState>(
   (ref) => FeaturesNotifier(),
 );
+
+/// Where a screen goes when it has nowhere of its own to go back to. With both
+/// modes on that is the mode picker; with one it is that mode's own screen,
+/// which is the top of the app because there is nothing left to pick between.
+final homeRouteProvider = Provider<String>((ref) {
+  final features = ref.watch(featuresProvider);
+  if (features.enabledCount > 1) return '/';
+  return features.timer ? '/timer' : '/tasks';
+});
