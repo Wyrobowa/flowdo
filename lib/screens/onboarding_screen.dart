@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/features_provider.dart';
 import '../providers/notifications_provider.dart';
 import '../services/notification_service.dart';
 
@@ -75,7 +76,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
     if (!mounted) return;
     await prefs.setBool('onboarding_done', true);
-    if (mounted) context.go('/');
+    if (mounted) context.go(ref.read(homeRouteProvider));
   }
 
   void _next() {

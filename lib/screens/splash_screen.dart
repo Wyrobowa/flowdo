@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/features_provider.dart';
 import '../services/notification_service.dart';
 import '../services/sound_service.dart';
 
@@ -38,7 +39,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final onboardingDone = prefs.getBool('onboarding_done') == true;
 
     if (mounted) {
-      context.go(onboardingDone ? '/' : '/onboarding');
+      context.go(onboardingDone ? ref.read(homeRouteProvider) : '/onboarding');
     }
   }
 

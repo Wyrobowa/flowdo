@@ -5,6 +5,7 @@ import '../extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/defaults_provider.dart';
+import '../providers/features_provider.dart';
 import '../providers/session_provider.dart';
 import '../providers/tasks_provider.dart';
 
@@ -22,12 +23,13 @@ class SessionScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
 
     if (session == null) {
+      final home = ref.watch(homeRouteProvider);
       // Only a session screen still on top needs sending home. Stopping a
       // session rebuilds this one while it is already on its way out to
       // session.origin, and redirecting then would overrule that.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted && (ModalRoute.of(context)?.isCurrent ?? true)) {
-          context.go('/');
+          context.go(home);
         }
       });
       return const Scaffold(body: SizedBox.shrink());

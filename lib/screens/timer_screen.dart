@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../extensions.dart';
 import '../models/task.dart';
 import '../providers/defaults_provider.dart';
+import '../providers/features_provider.dart';
 import '../providers/session_provider.dart';
 import '../widgets/duration_picker.dart';
 import '../widgets/repeat_picker.dart';
@@ -58,14 +59,30 @@ class _TimerScreenState extends ConsumerState<TimerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final home = ref.watch(homeRouteProvider);
+
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back',
-          onPressed: () => context.go('/'),
-        ),
+        // Nothing sits behind this screen when the timer is the only mode, so
+        // it carries no back arrow then — and Settings has to be here either
+        // way, since the mode picker it otherwise lives on may never be shown.
+        automaticallyImplyLeading: false,
+        leading: home == '/timer'
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back',
+                onPressed: () => context.go(home),
+              ),
         title: const Text('Quick timer'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Settings',
+            onPressed: () => context.go('/settings'),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
