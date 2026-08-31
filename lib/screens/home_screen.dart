@@ -76,9 +76,7 @@ class HomeScreen extends ConsumerWidget {
         tooltip: 'Add task',
         child: const Icon(Icons.add),
       ),
-      bottomSheet: pending.isEmpty
-          ? null
-          : _StartSessionBar(pendingCount: pending.length),
+      bottomSheet: pending.isEmpty ? null : const _StartSessionBar(),
     );
   }
 
@@ -145,8 +143,7 @@ class _ProgressHeader extends StatelessWidget {
 }
 
 class _StartSessionBar extends ConsumerStatefulWidget {
-  const _StartSessionBar({required this.pendingCount});
-  final int pendingCount;
+  const _StartSessionBar();
 
   @override
   ConsumerState<_StartSessionBar> createState() => _StartSessionBarState();
@@ -155,9 +152,18 @@ class _StartSessionBar extends ConsumerStatefulWidget {
 class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
   int _cycles = 1;
 
+  /// What the button commits to: every pending task's focus and break, each
+  /// pass of the list included. A break runs after the last task too, so no
+  /// task is left out of the sum.
+  Duration _total(List<Task> pending) => Duration(
+        seconds: _cycles *
+            pending.fold(0, (sum, t) => sum + t.focusSeconds + t.breakSeconds),
+      );
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final pending = ref.watch(pendingTasksProvider);
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: EdgeInsets.fromLTRB(
@@ -206,7 +212,6 @@ class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
           FilledButton.icon(
             onPressed: () {
               HapticFeedback.mediumImpact();
-              final pending = ref.read(pendingTasksProvider);
               final tasks = _cycles > 1
                   ? [for (var i = 0; i < _cycles; i++) ...pending]
                   : pending;
@@ -219,7 +224,7 @@ class _StartSessionBarState extends ConsumerState<_StartSessionBar> {
             },
             icon: const Icon(Icons.play_arrow_rounded),
             label: Text(
-              'Start session · ${widget.pendingCount} task${widget.pendingCount == 1 ? '' : 's'}',
+              'Start session · ${pending.length} task${pending.length == 1 ? '' : 's'} · ${_total(pending).pretty}',
             ),
             style: FilledButton.styleFrom(backgroundColor: cs.primary),
           ),
